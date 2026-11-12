@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}{{ creator.name }} - cosknot{% endblock %}
+{% block description %}{{ creator.bio[:150] }}{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb" aria-label="ruta">
+  <a href="{{ url_for('creators') }}">creadores</a>
+  <span aria-hidden="true">/</span>
+  <span>{{ creator.name }}</span>
+</nav>
+
+<header class="profile-head">
+  <div class="profile-art accent-{{ creator.accent }}" aria-hidden="true">
+    <span class="thumb-initials">{{ creator.name[:1] }}{{ creator.name.split(' ')[-1][:1] }}</span>
+  </div>
+  <div class="profile-info">
+    <p class="tag">{{ creator.specialty }}</p>
+    <h1>{{ creator.name }}</h1>
+    <p class="meta">{{ creator.location }}</p>
+    <p class="bio">{{ creator.bio }}</p>
+    <div class="profile-actions">
+      <a class="button button-primary" href="mailto:{{ creator.contact_email }}">escribir a {{ creator.name.split(' ')[0] | lower }}</a>
+      <span class="meta">{{ works|length }} obras · {{ creator.specialty }}</span>
+    </div>
+  </div>
+</header>
+
+<section class="section" aria-labelledby="obras-titulo">
+  <h2 id="obras-titulo">obras</h2>
+  {% if works %}
+    <div class="grid work-grid">
+      {% for work in works %}
+        <article class="card work-card">
+          <a class="card-link" href="{{ url_for('work_detail', slug=work.slug) }}">
+            <div class="thumb accent-{{ (creator.accent + loop.index) % 10 }}" aria-hidden="true">
+              <span class="thumb-initials">{{ creator.name[:1] }}{{ loop.index }}</span>
+            </div>
+            <div class="card-body">
+              <p class="tag">{{ work.status }}</p>
+              <h3>{{ work.title }}</h3>
+              <p class="card-bio">{{ work.description[:110] }}…</p>
+              <p class="card-count">{{ work.price_note or "precio a consultar" }}</p>
+            </div>
+          </a>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="empty-state">este perfil todavía no tiene obras publicadas.</p>
+  {% endif %}
+</section>
+{% endblock %}

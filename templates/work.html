@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}{{ work.title }} - cosknot{% endblock %}
+{% block description %}{{ work.description[:150] }}{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb" aria-label="ruta">
+  <a href="{{ url_for('creators') }}">creadores</a>
+  <span aria-hidden="true">/</span>
+  <a href="{{ url_for('creator_detail', slug=creator.slug) }}">{{ creator.name }}</a>
+  <span aria-hidden="true">/</span>
+  <span>{{ work.title }}</span>
+</nav>
+
+<article class="work-detail">
+  <div class="work-art accent-{{ creator.accent }}" aria-hidden="true">
+    <span class="thumb-initials">{{ work.title[:1] }}</span>
+  </div>
+
+  <div class="work-body">
+    <p class="tag">{{ work.status }}</p>
+    <h1>{{ work.title }}</h1>
+    <p class="meta">
+      por <a href="{{ url_for('creator_detail', slug=creator.slug) }}">{{ creator.name }}</a>
+      · {{ creator.location }}
+    </p>
+
+    <p class="work-description">{{ work.description }}</p>
+
+    <dl class="detail-list">
+      <div>
+        <dt>precio orientativo</dt>
+        <dd>{{ work.price_note or "a consultar con el creador" }}</dd>
+      </div>
+      <div>
+        <dt>estado</dt>
+        <dd>{{ work.status }}</dd>
+      </div>
+      <div>
+        <dt>especialidad</dt>
+        <dd>{{ creator.specialty }}</dd>
+      </div>
+    </dl>
+
+    <div class="work-actions">
+      <a class="button button-primary" href="mailto:{{ creator.contact_email }}?subject={{ work.title|urlencode }}">escribir por esta obra</a>
+      <a class="button button-ghost" href="{{ url_for('creator_detail', slug=creator.slug) }}">ver perfil de {{ creator.name.split(' ')[0] | lower }}</a>
+    </div>
+  </div>
+</article>
+{% endblock %}

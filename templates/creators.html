@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}creadores - cosknot{% endblock %}
+{% block description %}directorio de creadores de cosplay: ropa, props y accesorios hechos a mano.{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <p class="eyebrow">descubrimiento</p>
+  <h1>creadores</h1>
+  <p class="lede">
+    {{ creators|length }} personas que hacen ropa, props y accesorios de cosplay.
+    filtra por especialidad o recorre la lista completa.
+  </p>
+</section>
+
+{% if creators %}
+  <div class="filter-bar" data-filter-bar>
+    <span class="filter-label" id="filtro-etiqueta">especialidad</span>
+    <div class="filter-buttons" role="group" aria-labelledby="filtro-etiqueta">
+      <button type="button" class="chip is-active" data-filter="todas" aria-pressed="true">todas</button>
+      {% for specialty in specialties %}
+        <button type="button" class="chip" data-filter="{{ specialty }}" aria-pressed="false">{{ specialty }}</button>
+      {% endfor %}
+    </div>
+    <p class="filter-status" data-filter-status role="status" aria-live="polite"></p>
+  </div>
+
+  <div class="grid creator-grid" data-creator-grid>
+    {% for creator in creators %}
+      <article class="card creator-card" data-specialty="{{ creator.specialty }}">
+        <a class="card-link" href="{{ url_for('creator_detail', slug=creator.slug) }}">
+          <div class="thumb accent-{{ creator.accent }}" aria-hidden="true">
+            <span class="thumb-initials">{{ creator.name[:1] }}{{ creator.name.split(' ')[-1][:1] }}</span>
+          </div>
+          <div class="card-body">
+            <p class="tag">{{ creator.specialty }}</p>
+            <h3>{{ creator.name }}</h3>
+            <p class="meta">{{ creator.location }}</p>
+            <p class="card-bio">{{ creator.bio[:110] }}…</p>
+            <p class="card-count">{{ creator.works|length }} obras publicadas</p>
+          </div>
+        </a>
+      </article>
+    {% endfor %}
+  </div>
+
+  <p class="empty-state" data-empty-state hidden>
+    no hay creadores en esta especialidad todavía. prueba con otra categoría.
+  </p>
+{% else %}
+  <p class="empty-state">todavía no hay creadores publicados.</p>
+{% endif %}
+{% endblock %}

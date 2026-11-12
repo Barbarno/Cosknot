@@ -10,7 +10,17 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+.pytest_cache/
+
+# entorno local: nunca se sube, la DATABASE_URL real vive en el panel de render
+.env
+
+# bases de datos sqlite locales; en render el disco es efimero y la db real esta en neon
+*.db
+*.sqlite
+*.sqlite3
 
 # copias de seguridad
 *.tar.gz
 *.bundle
+*.dump

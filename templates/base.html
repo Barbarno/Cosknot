@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}cosknot - creadores de cosplay{% endblock %}</title>
+  <meta name="description" content="{% block description %}descubre creadores de cosplay y su trabajo hecho a mano: ropa, props y accesorios.{% endblock %}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+  <a class="skip-link" href="#contenido">saltar al contenido</a>
+
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="{{ url_for('index') }}">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="brand-name">cosknot</span>
+      </a>
+      <nav class="site-nav" aria-label="navegación principal">
+        <a href="{{ url_for('creators') }}">creadores</a>
+        <a href="{{ url_for('index') }}#como-funciona">cómo funciona</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="contenido" class="wrap">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-inner">
+      <p class="footer-brand">cosknot</p>
+      <p class="footer-note">hecho a mano, encontrado sin ruido. <span aria-hidden="true">·</span> {{ current_year }}</p>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+</body>
+</html>

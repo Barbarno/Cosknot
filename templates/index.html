@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}cosknot - encuentra a quien hace tu cosplay{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="hero-copy">
+    <p class="eyebrow">directorio de creadores</p>
+    <h1>el cosplay que imaginas existe. alguien lo está cosiendo ahora mismo.</h1>
+    <p class="lede">
+      cosknot reúne a creadores de ropa, props y accesorios de cosplay en un solo
+      lugar. sin algoritmos, sin ruido: mira el trabajo, lee quién lo hace y
+      escríbele directamente.
+    </p>
+    <div class="hero-actions">
+      <a class="button button-primary" href="{{ url_for('creators') }}">descubrir creadores</a>
+      <a class="button button-ghost" href="#como-funciona">cómo funciona</a>
+    </div>
+    <p class="hero-meta">
+      {% if creator_count %}
+        {{ creator_count }} creadores publicados · ropa · props · accesorios
+      {% else %}
+        ropa · props · accesorios
+      {% endif %}
+    </p>
+  </div>
+  <div class="hero-art" aria-hidden="true">
+    <div class="hero-tile hero-tile-a"></div>
+    <div class="hero-tile hero-tile-b"></div>
+    <div class="hero-tile hero-tile-c"></div>
+  </div>
+</section>
+
+<section class="section" id="como-funciona" aria-labelledby="como-funciona-titulo">
+  <h2 id="como-funciona-titulo">cómo funciona</h2>
+  <ol class="steps">
+    <li>
+      <span class="step-number">01</span>
+      <h3>explora</h3>
+      <p>filtra por especialidad y mira piezas reales, no catálogos infinitos.</p>
+    </li>
+    <li>
+      <span class="step-number">02</span>
+      <h3>conoce</h3>
+      <p>cada perfil cuenta cómo trabaja la persona, sus materiales y su forma de encargo.</p>
+    </li>
+    <li>
+      <span class="step-number">03</span>
+      <h3>escribe</h3>
+      <p>el contacto es directo por correo. tú y quien hace la pieza, sin intermediarios.</p>
+    </li>
+  </ol>
+</section>
+
+{% if featured %}
+<section class="section" aria-labelledby="creadores-destacados">
+  <div class="section-head">
+    <h2 id="creadores-destacados">creadores para empezar</h2>
+    <a class="link-more" href="{{ url_for('creators') }}">ver todos</a>
+  </div>
+  <div class="grid creator-grid">
+    {% for creator in featured %}
+      <article class="card creator-card">
+        <a class="card-link" href="{{ url_for('creator_detail', slug=creator.slug) }}">
+          <div class="thumb accent-{{ creator.accent }}" aria-hidden="true">
+            <span class="thumb-initials">{{ creator.name[:1] }}{{ creator.name.split(' ')[-1][:1] }}</span>
+          </div>
+          <div class="card-body">
+            <p class="tag">{{ creator.specialty }}</p>
+            <h3>{{ creator.name }}</h3>
+            <p class="meta">{{ creator.location }}</p>
+            <p class="card-bio">{{ creator.bio[:110] }}…</p>
+          </div>
+        </a>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if works %}
+<section class="section" aria-labelledby="obras-recientes">
+  <div class="section-head">
+    <h2 id="obras-recientes">obras recientes</h2>
+  </div>
+  <ul class="work-list">
+    {% for work in works %}
+      <li class="work-row">
+        <a href="{{ url_for('work_detail', slug=work.slug) }}">
+          <span class="work-title">{{ work.title }}</span>
+          <span class="work-creator">{{ work.creator.name }}</span>
+          <span class="work-price">{{ work.price_note or "a consultar" }}</span>
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+{% endblock %}
