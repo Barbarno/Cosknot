@@ -1,0 +1,40 @@
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Disparar deploy hook de Render
+        env:
+          DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DEPLOY_HOOK:-}" ]; then
+            echo "RENDER_DEPLOY_HOOK no configurado: saltando el trigger" >&2
+            exit 0
+          fi
+          curl -X POST --fail --silent --show-error --max-time 30 "$DEPLOY_HOOK"
+
+      # El cold start del plan free tarda mas que un /healthz normal: 20 x 15 s = 5 min de margen.
+      - name: Esperar a que /healthz responda 200
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 20); do
+            if curl -fsS --max-time 10 https://cosknot.onrender.com/healthz > /dev/null; then
+              echo "healthy tras intento $i"
+              exit 0
+            fi
+            echo "intento $i/20 sin respuesta, esperando 15 s"
+            sleep 15
+          done
+          echo "el servicio no respondio 200 en 5 min" >&2
+          exit 1

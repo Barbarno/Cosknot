@@ -1,0 +1,41 @@
+name: backup
+
+on:
+  schedule:
+    - cron: '0 3 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Instalar cliente de Postgres si falta
+        run: |
+          set -euo pipefail
+          command -v pg_dump || (sudo apt-get update -qq && sudo apt-get install -y postgresql-client)
+
+      # NEON_DATABASE_URL debe ser la cadena sin -pooler: pg_dump necesita conexion directa.
+      - name: pg_dump a formato custom
+        env:
+          NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          DUMP="cosknot-db-${{ github.run_number }}.dump"
+          pg_dump --no-owner --no-privileges --format=custom -f "$DUMP" "$NEON_DATABASE_URL"
+          SIZE=$(stat -c%s "$DUMP")
+          echo "tamano del dump: $SIZE bytes"
+          if [ "$SIZE" -lt 1024 ]; then
+            echo "dump de $SIZE bytes: conexion mala o base vacia" >&2
+            exit 1
+          fi
+
+      - name: Subir artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: cosknot-db-${{ github.run_number }}
+          path: cosknot-db-${{ github.run_number }}.dump
+          retention-days: 30

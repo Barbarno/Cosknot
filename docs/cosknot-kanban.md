@@ -9,11 +9,7 @@ mover cada tarjeta entre estas columnas
 - [ ] elegir el primer problema del usuario a resolver
 - [ ] investigar el competidor más cercano
 - [ ] escribir el análisis swot
-- [ ] crear el repositorio de github
-- [ ] escribir el readme del proyecto
 - [ ] crear el tablero de proyecto de github
-- [ ] definir el modelo de datos inicial
-- [ ] elegir el color terracota exacto
 - [ ] elegir la tipografía
 - [ ] crear el brief de nombre y logo
 - [ ] escribir opciones de eslogan
@@ -21,23 +17,28 @@ mover cada tarjeta entre estas columnas
 - [ ] estimar costos iniciales y recurrentes
 - [ ] decidir si la ia entra en la primera versión
 - [ ] definir reglas de privacidad moderación y propiedad del contenido
-- [ ] construir la landing page
-- [ ] construir el descubrimiento de creadores
-- [ ] construir el perfil de creador
-- [ ] construir la página de detalle de una obra de cosplay
-- [ ] añadir los primeros modelos de base de datos
 - [ ] añadir autenticación solo después de que funcione el flujo público
-- [ ] añadir pruebas con pytest
-- [ ] desplegar una versión privada de prueba
-- [ ] conectar un dominio y https
 
 ## en curso
 
+- [ ] conectar un dominio y https
+  motivo: el pr de `cosknot.is-a.dev` está abierto en is-a-dev/register, pendiente de merge; hasta entonces no hay custom domain ni certificado en render.
 - [ ] mover aquí el trabajo activo y añadir el responsable y la fecha límite
 
 ## hecho
 
 - [ ] creadas las reglas del espacio de trabajo y la estructura de memoria del proyecto
+- [x] crear el repositorio de github
+- [x] escribir el readme del proyecto
+- [x] definir el modelo de datos inicial
+- [x] elegir el color terracota exacto
+- [x] construir la landing page
+- [x] construir el descubrimiento de creadores
+- [x] construir el perfil de creador
+- [x] construir la página de detalle de una obra de cosplay
+- [x] añadir los primeros modelos de base de datos
+- [x] añadir pruebas con pytest
+- [x] desplegar una versión privada de prueba
 
 ## aprobado
 
