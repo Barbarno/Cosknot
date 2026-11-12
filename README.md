@@ -12,6 +12,26 @@ cosknot no pretende ser una copia de un marketplace general. En esta primera ver
 - plataforma: render en plan free, región frankfurt, con base de datos neon (postgres) en la misma región.
 - el servicio se duerme tras 15 min sin tráfico: la primera petición siguiente tarda alrededor de 50 s por el cold start, no es una caída.
 
+## ejecutar en local
+
+requisitos: python 3.13 y powershell en windows. los comandos se ejecutan desde la raíz del repositorio.
+
+```powershell
+python -m venv .venv
+.venv\Scripts\python -m pip install -r requirements.txt
+.venv\Scripts\python -m flask --app app run --debug
+```
+
+el servidor queda en http://127.0.0.1:5000.
+
+pruebas:
+
+```powershell
+.venv\Scripts\python -m pytest -q
+```
+
+sin `DATABASE_URL` en el entorno se usa sqlite en `cosknot.db` (creado en la raíz del repositorio). la primera ejecución crea las tablas con `Base.metadata.create_all` y siembra el catálogo de ejemplo; las siguientes no duplican datos porque la siembra solo actúa si la tabla `creators` está vacía. para apuntar a neon, copia `.env.example` a `.env` y rellena `DATABASE_URL`; el comando `flask run` carga ese fichero.
+
 ## estructura del proyecto
 
 - `app.py`: fábrica de la aplicación flask, rutas públicas y health check.
@@ -29,6 +49,8 @@ cosknot no pretende ser una copia de un marketplace general. En esta primera ver
 - `docs/decisions/`: decisiones de arquitectura y flujo de trabajo.
 - `docs/research/`: investigación con fuentes.
 - `docs/deployment.md`: pasos de despliegue en render y neon.
+- `docs/backups.md`: copias de seguridad y restauración de la base de datos.
+- `docs/data-model.md`: modelo de datos inicial (tablas, columnas, reglas y carencias).
 - `docs/troubleshooting/`: problemas, síntomas y soluciones.
 - `domains/cosknot.json`: registro de dominio para is-a.dev.
 - `render.yaml`: blueprint del servicio en render.

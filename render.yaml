@@ -1,3 +1,6 @@
+# este fichero no es la fuente de verdad: el servicio se creó desde Public Git Repository
+# en el panel de Render y se gestiona allí. además, aquí se declaraban variables que no
+# existen en Render (FLASK_ENV, PYTHONUNBUFFERED). se mantiene solo como referencia.
 services:
   - type: web
     name: cosknot
@@ -12,10 +15,6 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.13.17
-      - key: PYTHONUNBUFFERED
-        value: "true"
-      - key: FLASK_ENV
-        value: production
       - key: SECRET_KEY
         generateValue: true
       - key: DATABASE_URL

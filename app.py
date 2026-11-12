@@ -33,7 +33,9 @@ def build_engine(url: str) -> Engine:
             options["poolclass"] = StaticPool
     else:
         options["pool_pre_ping"] = True
-        options["connect_args"] = {"sslmode": "require"}
+        # Neon sirve por pgbouncer en transaction mode: no hay estado de sesion entre
+        # transacciones, asi que los prepared statements cacheados por psycopg3 fallan.
+        options["connect_args"] = {"sslmode": "require", "prepare_threshold": None}
     return create_engine(url, **options)
 
 

@@ -45,3 +45,23 @@ coste: 0 €/mes y sin tarjeta.
 ## referencia
 
 investigación completa con fuentes y anécdotas: `docs/research/despliegue-gratis-2026.md`.
+
+## resultado
+
+lo que se construyó, contra lo que se planeó arriba. los pasos reales están en `docs/deployment.md`.
+
+| qué | planeado | real |
+|---|---|---|
+| hosting | render, plan free | render free, región Frankfurt, web service `cosknot` (`srv-dbqte8bl550s73er4bcg`), creado desde **Public Git Repository** sobre `main` con `autoDeploy: yes` / trigger `commit`. no se creó desde blueprint: `render.yaml` existe como referencia y no es la fuente de verdad del servicio |
+| runtime | python 3.12/3.13 + flask + jinja, gunicorn con `wsgi.py` | python 3.13.17, flask + jinja, gunicorn `wsgi:app` con `--workers 2 --threads 4 --timeout 60` |
+| base de datos | neon free, sin región ni nombres fijados | neon `cosknot`, postgres 18, AWS `eu-central-1` (Frankfurt), base `cosknot`, rol `cosknot_owner`. `DATABASE_URL` con la cadena pooled y sin query params; `sslmode=require` lo pone `build_engine()` |
+| esquema y datos | no estaba en el plan | `create_all()` + seed al arrancar, sin migraciones: `creators` 10 filas, `works` 24 |
+| dominio | `cosknot.onrender.com` desde el día uno, `cosknot.is-a.dev` cuando se quiera | `cosknot.onrender.com` activo. `cosknot.is-a.dev` añadido en render (id `cdm-dbqtj9mi0phs738hnum0`, estado `unverified`), PR `is-a-dev/register#61033` abierto y pendiente de merge |
+| tls | let's encrypt automático de render | igual en el subdominio; el dominio propio no tiene certificado hasta que la verificación pase |
+| ci/cd | no estaba en el plan | `.github/workflows/deploy.yml`: push a `main` → `POST /v1/services/<id>/deploys` y sondeo de `/healthz` durante 5 min. `.github/workflows/backup.yml`: domingo 03:00 UTC, `pg_dump` en formato custom, artefacto 30 días. secretos `RENDER_API_KEY`, `RENDER_SERVICE_ID`, `NEON_DATABASE_URL` |
+
+- **coste real**: 0 €/mes, ninguna tarjeta en render ni en neon.
+- **letra pequeña, ya conocida**: el ToS de is-a.dev es no comercial. si cosknot vende o recibe tráfico real, se compra un `.dev` y se sale, como ya decía "revisar si".
+- **hallazgo que el plan no vio**: render clasifica `cosknot.is-a.dev` como `domainType: apex`, porque is-a.dev está en la Public Suffix List. para un apex espera un registro A a `216.24.57.1`; el PR lleva un CNAME a `cosknot.onrender.com`, así que la verificación no va a pasar hasta cambiar el registro. el plan daba por hecho que el CNAME era el camino.
+
+el resto de la decisión sigue en pie: python + flask + jinja, gunicorn, y sqlite fuera de producción.

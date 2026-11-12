@@ -2,50 +2,101 @@
 
 formato: síntoma → causa → arreglo.
 
-## 1. la base de datos vuelve vacía después de cada deploy
+combinación real: render web service `cosknot` (`srv-dbqte8bl550s73er4bcg`, free, Frankfurt, Python 3.13.17) + neon free en Frankfurt. los pasos de despliegue están en `docs/deployment.md`; backups, restauración y secretos, en `docs/backups.md`.
 
-**síntoma**: los usuarios/obras creados desaparecen tras un redeploy o tras reiniciar el servicio; el fichero `.db` no está.
-**causa**: sqlite sobre el filesystem de render, que es efímero. cada deploy monta un contenedor nuevo y el fichero se va con el anterior.
-**arreglo**: mover todo a neon. `DATABASE_URL` como variable de entorno y el engine de sqlalchemy apuntando ahí. sqlite solo en local.
+## 1. cold start: la primera petición tarda ~50 s
 
-## 2. `could not connect to server` / `connection refused` tras poner la cadena
+**síntoma**: el primer acceso tras un rato sin tráfico tarda decenas de segundos y luego carga; el run de `deploy` en github puede marcar rojo en el paso que sondea `/healthz`. no hay error en los logs, solo el arranque.
+**causa**: render free duerme el servicio a los 15 min sin tráfico. la primera petición paga el arranque de gunicorn, el import de flask y sqlalchemy, `create_all()` + seed contra la base, y la reconexión a neon (el compute de neon también despierta en el primer `SELECT 1`). en este proyecto está medido en ~50 s.
+**arreglo**: no es una caída. `.github/workflows/deploy.yml` sondea `/healthz` 20 veces cada 15 s, o sea 5 min de margen; si el servicio tarda más que eso, el problema no es el cold start: mirar **Logs** del deploy. si el cold start molesta a los usuarios, plan de pago o cloud run (`docs/decisions/0001-stack-despliegue-dominio.md`). no poner un keep-alive contra la base para evitarlo: la mantiene despierta y gasta la cuota de neon (entrada 8).
 
-**síntoma**: el deploy arranca pero el primer request da 500 y el log muestra fallo de conexión al host `ep-xxxx.<region>.aws.neon.tech`.
-**causa**: cadena directa (sin `-pooler`) o `sslmode` ausente. en el plan free el número de conexiones directas es bajo y gunicorn abre varias por worker.
-**arreglo**: copiar de neon la cadena **pooled** (`...-pooler...`) y terminar en `?sslmode=require`. en sqlalchemy, `create_engine(url, pool_pre_ping=True)`.
+## 2. `/healthz` devuelve 503
 
-## 3. `prepared statement "s0" already exists` o `bind message supplies N parameters`
+**síntoma**: `curl -s -o /dev/null -w "%{http_code}" https://cosknot.onrender.com/healthz` da 503 y el cuerpo es `{"status":"error"}`; render puede marcar el deploy como fallido en el health check aunque gunicorn esté escuchando.
+**causa**: `/healthz` no es un ping. abre sesión y ejecuta `SELECT 1`; el 503 sale del `except` de la ruta en `app.py`. el proceso está vivo; lo que falla es postgres. tres orígenes: neon caído o con el compute suspendido, `DATABASE_URL` mal (host, usuario, contraseña, nombre de base), o conexión que abre pero con el `SELECT` rechazado. si en lugar de 503 sale 502, el problema sí es el proceso (entrada 11).
+**arreglo**: mirar el estado del proyecto en la consola de neon y, en paralelo, probar la misma cadena desde local:
 
-**síntoma**: errores intermitentes al consultar, sobre todo tras el primer request de cada worker.
-**causa**: el pooler de neon (pgbouncer, transaction mode) no soporta prepared statements a nivel de sesión; psycopg los cachea por conexión y el server las reasigna.
-**arreglo**: en la cadena pooled añadir `?sslmode=require&prepare_threshold=0`, o en el engine `connect_args={"prepare_threshold": 0}`. si se usa sqlalchemy con `psycopg`, ese ajuste desactiva la caché.
+```bash
+DATABASE_URL="postgresql://cosknot_owner:PASSWORD@ep-xxxx-pooler.eu-central-1.aws.neon.tech/cosknot" \
+  python scripts/check_db.py
+```
 
-## 4. el primer acceso del día tarda un minuto y parece caído
+si `check_db.py` conecta y render no, comparar la variable del panel carácter a carácter (espacio final, salto de línea, contraseña rotada). no añadir query params a la cadena: `build_engine()` ya pasa `sslmode=require` en `connect_args`, y la cadena de render va sin `?`. el deploy no se reintenta solo: hay que relanzarlo cuando la base responda (`docs/deployment.md` §3.2).
 
-**síntoma**: el navegador gira ~60 s y luego carga; los monitores externos marcan el sitio como down a intervalos.
-**causa**: render free duerme el servicio a los 15 min sin tráfico; el arranque de gunicorn más el import de flask y la reconexión a neon suman ese minuto. neon además despierta el compute en el primer `SELECT` (~1 s).
-**arreglo**: no es una caída, es cold start. aceptarlo en el mvp, o pasar a plan de pago / cloud run. no poner keep-alive contra neon para evitarlo (ver entrada 5).
+## 3. health check en verde pero la home responde 500
 
-## 5. neon suspende el compute a mitad de mes
+**síntoma**: `/healthz` da 200 `{"status":"ok"}` y `/` (o solo `/creadores`, o un detalle) devuelve 500.
+**causa**: el health check solo prueba `SELECT 1`. la home hace tres consultas (`Creator`, `Work`, `count(*)`) y renderiza `index.html`. con la base viva, un 500 es plantilla o esquema: una variable o filtro que la plantilla espera y no llega, un `url_for` a un endpoint renombrado, o una columna nueva en `models.py` que no existe en la tabla. `Base.metadata.create_all()` crea tablas que faltan, **no** altera las que ya existen, así que un cambio de modelo no se aplica solo.
+**arreglo**: **Logs** del servicio, la traza dice cuál de los dos es. si es plantilla, reproducir en local contra la misma base. si es esquema, añadir la columna a mano en neon (o recrear la tabla); el proyecto no tiene migraciones, todo el esquema lo pone `create_all()` al arrancar (`docs/deployment.md` §2.4).
 
-**síntoma**: a partir de la segunda quincena, todo request devuelve error de conexión; en el panel de neon el proyecto figura suspendido por cuota.
-**causa**: el plan free son 100 cu-horas por proyecto y mes. a 0,25 cu (mínimo) son ~400 h de compute despierto; un mes tiene ~730 h. cualquier ping periódico mantiene el compute encendido y agota la cuota.
-**arreglo**: quitar crons, uptime checks y keep-alive contra la db. dejar que neon haga scale-to-zero a los 5 min. al llegar el día 1 del mes siguiente se reactiva solo. si el uso es real y constante, pasar a plan de pago.
+## 4. `connection refused` o `too many connections` contra neon
 
-## 6. render suspende el servicio por banda o por tráfico saliente
+**síntoma**: el deploy arranca, el primer request da 500 y el log muestra fallo de conexión a un host `ep-xxxx.<region>.aws.neon.tech` (sin `-pooler`), o el arranque falla con `too many connections` cuando gunicorn levanta los workers.
+**causa**: la cadena directa abre conexiones que no pasan por el pooler, contra el límite de conexiones directas del plan free. el start command va con `--workers 2 --threads 4` y cada worker mantiene su propio pool, así que el número de conexiones se multiplica.
+**arreglo**: usar la cadena **pooled**, la que lleva `-pooler` en el host; es la que está en `DATABASE_URL` en render y la que documenta `docs/deployment.md` §2.1. sin query params. si aun así se agota, bajar workers (`--workers 1 --threads 8`) antes que tocar el pool. `pool_pre_ping=True` ya está en `build_engine()` y evita revivir conexiones muertas tras el scale-to-zero.
 
-**síntoma**: el servicio pasa a estado suspendido sin un deploy fallido; el panel muestra aviso de límite de banda o de "service-initiated traffic".
-**causa**: el plan free son 5 gb de banda al mes y hay reportes de suspensión cuando la app genera mucho tráfico saliente (llamadas a la db, cron, webhooks). es anécdota de foro, no una regla publicada, pero el límite de banda sí es oficial.
-**arreglo**: revisar **Metrics** del servicio. recortar peticiones salientes (una conexión reutilizada, sin polling), servir estáticos con cache, y esperar al día 1 si es banda agotada. contactar soporte si la suspensión es por tráfico saliente.
+## 5. errores intermitentes de prepared statements con la cadena pooled
 
-## 7. HTTPS no se emite en `cosknot.is-a.dev`
+**síntoma**: consultas que fallan y funcionan alternando, sobre todo en el primer request de cada worker o después de que neon despierte; la base responde y `/healthz` suele seguir en verde porque el `SELECT 1` cae en otra conexión del pool.
+**causa**: el pooler de neon en transaction mode no mantiene estado de sesión. psycopg3 cachea prepared statements por conexión (`prepare_threshold`, por defecto a los 5 usos) y el servidor que atiende la transacción cambia, así que una sentencia preparada en una conexión no existe en la siguiente.
+**arreglo**: desactivar la caché. ya está aplicado en `build_engine()`:
 
-**síntoma**: el dominio responde por http o el navegador da `ERR_CERT_COMMON_NAME_INVALID`; render deja el dominio en "pending verification".
-**causa**: render emite el certificado con let's encrypt solo cuando el CNAME ya resuelve públicamente hacia `cosknot.onrender.com`. si se añade el dominio antes del merge del PR en is-a.dev, la verificación nunca termina.
-**arreglo**: confirmar con `nslookup cosknot.is-a.dev` que devuelve el CNAME, esperar la propagación (minutos a horas), y volver a pulsar **Verify** en render. si el CNAME apunta a otro sitio, el certificado no se emite hasta corregirlo.
+```python
+options["connect_args"] = {"sslmode": "require", "prepare_threshold": None}
+```
 
-## 8. `502 Bad Gateway` justo después del deploy
+`None` desactiva los prepared statements del todo, que es lo que necesita el transaction mode. no cambia nada del resto del engine.
 
-**síntoma**: el deploy dice "live" pero toda petición devuelve 502; `/healthz` también.
-**causa**: el proceso muere al arrancar — import error en `wsgi.py`, `DATABASE_URL` ausente, o gunicorn escuchando en un puerto distinto del `$PORT`.
-**arreglo**: leer **Logs** del servicio, no el health check. los tres fallos habituales: `startCommand` sin `--bind 0.0.0.0:$PORT`, `app.py` sin `app` a nivel de módulo, y variable de entorno no definida en el panel.
+## 6. el push no dispara ningún deploy
+
+**síntoma**: el commit está en `main` en github y render sigue sirviendo el anterior; o en **Actions** no aparece ningún run de `deploy`.
+**causa**: el servicio no tiene auto-deploy activo, o mira otra rama, o el push no llegó a `main`. no hay deploy hook en este proyecto: el deploy normal lo dispara `autoDeploy: yes` con `autoDeployTrigger: commit` sobre el repositorio público (render consulta el repo y redespliega al ver el commit, sin github app), y `.github/workflows/deploy.yml` lo fuerza por API como red de seguridad.
+**arreglo**: render → servicio `cosknot` → **Settings → Build & Deploy**: `Auto-Deploy` en yes, trigger `commit`, branch `main`. mirar **Events** y **Deploys** del servicio para ver si render vio el commit. en github, Actions → `deploy`: si no hay run, el push no entró en `main` o el workflow está desactivado; si hay run y falló el trigger, revisar `RENDER_API_KEY` y `RENDER_SERVICE_ID` (si faltan, el paso sale con `exit 0` y solo queda el sondeo de salud). forzar a mano, desde el panel o con el `curl` de `docs/deployment.md` §3.2, o con **Actions → deploy → Run workflow**.
+
+## 7. los datos desaparecen tras un deploy
+
+**síntoma**: después de un redeploy o un reinicio, la home vuelve al catálogo del seed y `creators`/`works` vuelven a 10/24; en los logs aparece que la app creó `cosknot.db`.
+**causa**: el filesystem de render es efímero. cada deploy y cada reinicio monta un contenedor nuevo y el disco anterior se va con él, así que sqlite pierde todo. el detalle que lo hace silencioso: `normalize_database_url()` cae a `sqlite:///cosknot.db` cuando `DATABASE_URL` no está definida, de modo que un servicio sin la variable arranca en sqlite, responde `/healthz` 200 y borra los datos en el siguiente deploy, sin un solo error.
+**arreglo**: `DATABASE_URL` definida siempre en render (`docs/deployment.md` §2.3); sqlite solo en local. si aparece el fallback, definir la variable, redesplegar y comprobar el conteo real con `python scripts/check_db.py`. el seed se repite solo cuando `creators` está vacía. nada de lo que suba un usuario se guarda en disco: en free no hay volumen persistente, así que ficheros e imágenes van a un bucket externo o no van.
+
+## 8. la cuota de neon se agota y el compute queda suspendido
+
+**síntoma**: a mitad de ciclo, todo request falla al conectar y el proyecto figura con el compute suspendido por cuota; el run del domingo de `.github/workflows/backup.yml` también falla, en el paso de `pg_dump`.
+**causa**: el plan free son 100 cu-horas por proyecto y mes. con el mínimo de compute (0,25 cu) son ~400 h despiertas contra las ~730 h de un mes, así que cualquier cosa que toque la base con frecuencia mantiene el compute encendido y agota la cuota. aquí tocan la base: `/healthz` en cada sondeo del CI, el seed del arranque y el `pg_dump` semanal.
+**arreglo**: quitar lo que despierte la base sin necesidad y dejar que el scale-to-zero de neon (5 min) haga su trabajo; no hay keep-alive ni uptime check contra la base. el compute se reactiva al empezar el ciclo siguiente. mientras dure la suspensión no hay backup posible: ese hueco del histórico se pierde y hay que anotarlo (`docs/backups.md`). si el uso es diario y real, toca plan de pago.
+
+## 9. el dominio sigue `unverified` después del merge del PR
+
+**síntoma**: el PR `is-a-dev/register#61033` está mergeado, el nombre ya resuelve por DNS, y el custom domain `cosknot.is-a.dev` (id `cdm-dbqtj9mi0phs738hnum0`) sigue en `unverified`; pulsar **Verify** no cambia el estado.
+**causa**: render clasifica `cosknot.is-a.dev` como `domainType: apex`, no como subdominio, porque is-a.dev está en la Public Suffix List y para el DNS público ese nombre es una raíz. para un apex render espera un registro **A** a `216.24.57.1`; el PR registra un **CNAME** a `cosknot.onrender.com`, que es lo que se pensó antes de ver cómo lo clasifica la API. que is-a.dev sirva el CNAME no cambia la clasificación del lado de render, así que la verificación no puede pasar.
+**arreglo**: cambiar el registro del PR a `A` → `216.24.57.1` (el json de is-a.dev admite A, CNAME, AAAA, TXT y MX). si el merge ya ocurrió, abrir un PR nuevo al registro con el A. esperar propagación y volver a verificar:
+
+```bash
+nslookup -type=A cosknot.is-a.dev 1.1.1.1
+```
+
+y **Settings → Custom Domains → Verify**, o el `POST .../custom-domains/cdm-dbqtj9mi0phs738hnum0/verify` de `docs/deployment.md` §5. el estado pasa a verificado cuando render ve el registro que espera.
+
+## 10. TLS no se emite en `cosknot.is-a.dev`
+
+**síntoma**: el DNS ya resuelve y `https://cosknot.is-a.dev` da error de certificado (nombre que no coincide, o ninguno emitido); `curl -sI https://cosknot.is-a.dev/healthz` no completa.
+**causa**: el certificado es el segundo paso y no empieza hasta que el primero termina. render pide el Let's Encrypt del dominio cuando el dominio está verificado; con el dominio en `unverified`, o con el registro apuntando a otro sitio, no hay emisión. no hay certificado que subir ni renovar a mano.
+**arreglo**: cerrar primero la verificación del dominio (entrada 9), y después esperar la emisión, de minutos a unas horas. comprobar con:
+
+```bash
+curl -sI https://cosknot.is-a.dev/healthz
+```
+
+200 y certificado válido. mientras tanto `https://cosknot.onrender.com` sigue siendo la URL de producción y la que usan el workflow y los chequeos.
+
+## 11. `502 Bad Gateway` justo después del deploy
+
+**síntoma**: el deploy figura como live pero toda petición devuelve 502, `/healthz` incluido.
+**causa**: el proceso no está escuchando. import error al arrancar, gunicorn apuntando a un objeto que no existe, o gunicorn escuchando en un puerto distinto de `$PORT`.
+**arreglo**: leer **Logs**, no el health check. tres comprobaciones: `startCommand` con `--bind 0.0.0.0:$PORT`; gunicorn contra `wsgi:app` (`wsgi.py` expone `app`, que `app.py` crea a nivel de módulo); y ninguna variable obligatoria ausente en el panel. si `/healthz` devolviera 503 en vez de 502, no es esto (entrada 2).
+
+## 12. el servicio aparece suspendido sin un deploy fallido
+
+**síntoma**: el servicio pasa a suspendido sin build ni deploy rojo; el aviso del panel habla de banda o de "service-initiated traffic".
+**causa**: el plan free son 5 GB de banda al mes, y ese límite sí es oficial. la suspensión por tráfico saliente es anécdota de foro, no una regla publicada; no hay confirmación. no consta que haya pasado en este proyecto.
+**arreglo**: revisar **Metrics** del servicio para ver el consumo real. si es banda agotada, esperar al ciclo siguiente y recortar lo que genere tráfico saliente: conexiones reutilizadas, nada de polling, estáticos con cache. si el aviso es por tráfico saliente y no hay consumo que lo explique, abrir ticket con soporte.
