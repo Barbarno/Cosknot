@@ -13,18 +13,26 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Disparar deploy hook de Render
+      # Render ya tiene autoDeploy activado sobre el repo publico; este job fuerza el deploy
+      # cuando el polling de Render no lo detecta y verifica que el servicio queda sano.
+      - name: Disparar deploy en Render
         env:
-          DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
         run: |
           set -euo pipefail
-          if [ -z "${DEPLOY_HOOK:-}" ]; then
-            echo "RENDER_DEPLOY_HOOK no configurado: saltando el trigger" >&2
+          if [ -z "${RENDER_API_KEY:-}" ] || [ -z "${RENDER_SERVICE_ID:-}" ]; then
+            echo "faltan RENDER_API_KEY o RENDER_SERVICE_ID: saltando el trigger" >&2
             exit 0
           fi
-          curl -X POST --fail --silent --show-error --max-time 30 "$DEPLOY_HOOK"
+          curl --fail --silent --show-error --max-time 30 \
+            -X POST \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{}' \
+            "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" > /dev/null
 
-      # El cold start del plan free tarda mas que un /healthz normal: 20 x 15 s = 5 min de margen.
+      # El plan free duerme a los 15 min: el primer /healthz puede tardar ~50 s.
       - name: Esperar a que /healthz responda 200
         run: |
           set -euo pipefail
