@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}cosknot - marketplace de cosplay{% endblock %}</title>
   <meta name="description" content="{% block description %}compra piezas de cosplay hechas a mano o encarga la tuya a quien la hace: ropa, props, pelucas y accesorios de cualquier juego, serie o anime.{% endblock %}">
+  <link rel="icon" href="{{ url_for('static', filename='img/logo-mark.svg') }}" type="image/svg+xml">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
@@ -13,8 +14,7 @@
   <header class="site-header">
     <div class="wrap header-inner">
       <a class="brand" href="{{ url_for('index') }}">
-        <span class="brand-mark" aria-hidden="true"></span>
-        <span class="brand-name">cosknot</span>
+        <img class="brand-logo" src="{{ url_for('static', filename='img/logo.svg') }}" alt="cosknot" width="460" height="96">
       </a>
       <nav class="site-nav" aria-label="navegación principal">
         <a href="{{ url_for('creators') }}">creadores</a>
@@ -31,7 +31,7 @@
   <footer class="site-footer">
     <div class="wrap footer-inner">
       <div>
-        <p class="footer-brand">cosknot</p>
+        <p class="footer-brand"><img class="footer-logo" src="{{ url_for('static', filename='img/logo.svg') }}" alt="cosknot" width="460" height="96"></p>
         <p class="footer-note">marketplace de cosplay hecho a mano. compra una pieza o encárgala. <span aria-hidden="true">·</span> {{ current_year }}</p>
       </div>
       <nav class="footer-nav" aria-label="enlaces del pie">
