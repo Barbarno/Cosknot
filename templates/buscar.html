@@ -23,9 +23,9 @@
   <div class="product-grid">
     {% for work in obras %}
       <a class="product-card" href="{{ url_for('work_detail', slug=work.slug) }}">
-        <div class="product-img accent-{{ work.creator.accent }}">
-          <span class="thumb-initials">{{ work.title[:1] }}</span>
-        </div>
+        <span class="product-img">
+          <img src="{{ foto(work.slug) }}" alt="{{ work.title }}" width="600" height="600" loading="lazy">
+        </span>
         <h3 class="product-title">{{ work.title }}</h3>
         <p class="product-shop">por {{ work.creator.name }}</p>
         <p class="product-price">{{ work.price_note or "a consultar" }}</p>
@@ -43,7 +43,9 @@
   <div class="shop-grid">
     {% for creator in creadores %}
       <a class="shop-card" href="{{ url_for('creator_detail', slug=creator.slug) }}">
-        <span class="shop-avatar accent-{{ creator.accent }}">{{ creator.name[:1] }}{{ creator.name.split(' ')[-1][:1] }}</span>
+        <span class="shop-avatar">
+          <img src="{{ foto(creator.slug) }}" alt="" width="128" height="128" loading="lazy">
+        </span>
         <div>
           <h3>{{ creator.name }}</h3>
           <p>{{ creator.specialty }} · {{ creator.location }}</p>

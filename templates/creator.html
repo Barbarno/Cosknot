@@ -12,11 +12,13 @@
   <span>{{ creator.name }}</span>
 </nav>
 
-<div class="shop-banner" aria-hidden="true"></div>
+<div class="shop-banner">
+  <img src="{{ foto(creator.slug) }}" alt="" width="1600" height="400" fetchpriority="high">
+</div>
 
 <header class="profile-head">
-  <div class="profile-art accent-{{ creator.accent }}" aria-hidden="true">
-    <span class="thumb-initials">{{ creator.name[:1] }}{{ creator.name.split(' ')[-1][:1] }}</span>
+  <div class="profile-art">
+    <img src="{{ foto(creator.slug) }}" alt="retrato del taller de {{ creator.name }}" width="216" height="216">
   </div>
   <div class="profile-info">
     <p class="tag">{{ creator.specialty }}{% if creator.verified %} · verificado{% endif %}</p>
@@ -31,23 +33,18 @@
   </div>
 </header>
 
-<div class="tabs" aria-hidden="true">
-  <span class="is-active">piezas</span>
-  <span>encargos</span>
-  <span>opiniones</span>
-</div>
-
 <section class="section" aria-labelledby="obras-titulo">
   <div class="section-head">
     <h2 id="obras-titulo">piezas de {{ creator.name.split(' ')[0] | lower }}</h2>
+    <span class="link-more">{{ works|length }} publicadas</span>
   </div>
   {% if works %}
     <div class="product-grid">
       {% for work in works %}
         <a class="product-card" href="{{ url_for('work_detail', slug=work.slug) }}">
-          <div class="product-img accent-{{ (creator.accent + loop.index) % 10 }}">
-            <span class="thumb-initials">{{ work.title[:1] }}</span>
-          </div>
+          <span class="product-img">
+            <img src="{{ foto(work.slug) }}" alt="{{ work.title }}" width="600" height="600" loading="lazy">
+          </span>
           <h3 class="product-title">{{ work.title }}</h3>
           <p class="product-shop">{{ work.status }}</p>
           <p class="product-price">{{ work.price_note or "a consultar" }}</p>
@@ -57,5 +54,25 @@
   {% else %}
     <p class="empty-state">este perfil todavía no tiene obras publicadas. escríbele si quieres encargar algo.</p>
   {% endif %}
+</section>
+
+<section class="section" aria-labelledby="taller-titulo">
+  <div class="section-head">
+    <h2 id="taller-titulo">cómo trabaja</h2>
+  </div>
+  <div class="info-grid">
+    <article class="info-card">
+      <h3>encargos</h3>
+      <p>trabaja por encargo además de lo que ya tiene publicado. le cuentas el personaje, acordáis materiales y plazo, y te manda fotos según avanza.</p>
+    </article>
+    <article class="info-card">
+      <h3>envíos</h3>
+      <p>envía desde {{ creator.location }}. el coste depende del tamaño de la pieza y se cierra por correo antes de empezar.</p>
+    </article>
+    <article class="info-card">
+      <h3>especialidad</h3>
+      <p>{{ creator.specialty }}. si buscas otra cosa, en el listado de creadores tienes el resto de talleres filtrados por categoría.</p>
+    </article>
+  </div>
 </section>
 {% endblock %}

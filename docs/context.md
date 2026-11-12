@@ -45,6 +45,11 @@ barra de categorías justo debajo, tarjetas de producto cuadradas, listado con f
 en la barra lateral y ficha de obra a dos columnas. Es una decisión de enfoque, no un
 tema aparte: quien entra tiene que poder buscar, filtrar y abrir una ficha sin pensar.
 
+Las fotos de las piezas son de Wikimedia Commons, con licencia libre, y están elegidas
+una a una: en `app.py` hay un diccionario que asigna a cada obra y a cada taller su
+imagen. Si mañana se añade una pieza nueva y no está en el diccionario, la web tira de
+una foto de relleno en vez de dejar el hueco roto.
+
 ## stack
 
 Python 3.13, Flask, Jinja, SQLAlchemy, SQLite en local, PostgreSQL en producción,

@@ -15,8 +15,8 @@
 </nav>
 
 <article class="work-detail">
-  <div class="work-art accent-{{ creator.accent }}" aria-hidden="true">
-    <span class="thumb-initials">{{ work.title[:1] }}</span>
+  <div class="work-art">
+    <img src="{{ foto(work.slug) }}" alt="{{ work.title }}" width="900" height="900" fetchpriority="high">
   </div>
 
   <div class="work-body">
@@ -42,6 +42,10 @@
         <dt>taller</dt>
         <dd>{{ creator.name }}</dd>
       </div>
+      <div>
+        <dt>entrega</dt>
+        <dd>desde {{ creator.location }}</dd>
+      </div>
     </dl>
 
     <div class="work-actions">
@@ -51,10 +55,41 @@
 
     <p class="work-description">{{ work.description }}</p>
 
+    <a class="seller-card" href="{{ url_for('creator_detail', slug=creator.slug) }}">
+      <span class="shop-avatar">
+        <img src="{{ foto(creator.slug) }}" alt="" width="128" height="128" loading="lazy">
+      </span>
+      <span class="seller-text">
+        <strong>{{ creator.name }}{% if creator.verified %} · verificado{% endif %}</strong>
+        <span>{{ creator.specialty }} · {{ creator.location }}</span>
+      </span>
+    </a>
+
     <p class="profile-note">
       el trato se cierra por correo con el taller. cosknot no cobra nada en esta versión:
       pone el escaparate y el contacto.
     </p>
   </div>
 </article>
+
+{% if otras %}
+<section class="section" aria-labelledby="otras-titulo">
+  <div class="section-head">
+    <h2 id="otras-titulo">más de {{ creator.name.split(' ')[0] | lower }}</h2>
+    <a class="link-more" href="{{ url_for('creator_detail', slug=creator.slug) }}">ver el taller</a>
+  </div>
+  <div class="product-grid">
+    {% for obra in otras %}
+      <a class="product-card" href="{{ url_for('work_detail', slug=obra.slug) }}">
+        <span class="product-img">
+          <img src="{{ foto(obra.slug) }}" alt="{{ obra.title }}" width="600" height="600" loading="lazy">
+        </span>
+        <h3 class="product-title">{{ obra.title }}</h3>
+        <p class="product-shop">{{ obra.status }}</p>
+        <p class="product-price">{{ obra.price_note or "a consultar" }}</p>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
 {% endblock %}

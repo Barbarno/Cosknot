@@ -38,9 +38,9 @@
       {% for creator in creators %}
         <article class="card creator-card" data-specialty="{{ creator.specialty }}">
           <a class="card-link" href="{{ url_for('creator_detail', slug=creator.slug) }}">
-            <div class="thumb accent-{{ creator.accent }}" aria-hidden="true">
-              <span class="thumb-initials">{{ creator.name[:1] }}{{ creator.name.split(' ')[-1][:1] }}</span>
-            </div>
+            <span class="thumb">
+              <img src="{{ foto(creator.slug) }}" alt="" width="600" height="450" loading="lazy">
+            </span>
             <div class="card-body">
               <p class="tag">{{ creator.specialty }}{% if creator.verified %} · verificado{% endif %}</p>
               <h3>{{ creator.name }}</h3>

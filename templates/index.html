@@ -8,7 +8,7 @@
   <div class="hero-copy">
     <p class="hero-kicker">marketplace de cosplay</p>
     <h1>cosplay hecho a mano, listo para tu próximo evento</h1>
-    <p>
+    <p class="hero-lead">
       ropa, props, pelucas y accesorios de cualquier juego, serie o anime. si la pieza
       ya está hecha, la compras; si no existe, hablas con quien la hace y te la monta a
       tus medidas. el taller es suyo, el escaparate es nuestro.
@@ -23,10 +23,17 @@
       <p><strong>4</strong> especialidades</p>
     </div>
   </div>
-  <div class="hero-art" aria-hidden="true">
-    <div class="hero-tile hero-tile-a"></div>
-    <div class="hero-tile hero-tile-b"></div>
-    <div class="hero-tile hero-tile-c"></div>
+  <div class="hero-art">
+    <figure class="hero-tile hero-tile-a">
+      <img src="/static/img/pieza-04.jpg" alt="armadura de cosplay hecha a mano" width="900" height="1200" fetchpriority="high">
+      <figcaption class="hero-chip">hecho a mano</figcaption>
+    </figure>
+    <figure class="hero-tile hero-tile-b">
+      <img src="/static/img/pieza-03.jpg" alt="traje de cosplay cosido a medida" width="800" height="600" loading="lazy">
+    </figure>
+    <figure class="hero-tile hero-tile-c">
+      <img src="/static/img/pieza-12.jpg" alt="detalle de un cosplay terminado" width="800" height="600" loading="lazy">
+    </figure>
   </div>
 </section>
 
@@ -36,12 +43,34 @@
     <a class="link-more" href="{{ url_for('creators') }}">ver todo</a>
   </div>
   <div class="cat-row">
-    <a class="cat-tile" href="{{ url_for('creators') }}?especialidad=ropa"><span class="accent-0" aria-hidden="true"></span>ropa</a>
-    <a class="cat-tile" href="{{ url_for('creators') }}?especialidad=props"><span class="accent-1" aria-hidden="true"></span>props</a>
-    <a class="cat-tile" href="{{ url_for('creators') }}?especialidad=pelucas"><span class="accent-4" aria-hidden="true"></span>pelucas</a>
-    <a class="cat-tile" href="{{ url_for('creators') }}?especialidad=accesorios"><span class="accent-5" aria-hidden="true"></span>accesorios</a>
-    <a class="cat-tile" href="{{ url_for('index') }}#como-funciona"><span class="accent-3" aria-hidden="true"></span>encargos</a>
-    <a class="cat-tile" href="{{ url_for('creators') }}"><span class="accent-7" aria-hidden="true"></span>todo</a>
+    <a class="cat-tile" href="{{ url_for('creators') }}?especialidad=ropa">
+      <span class="cat-img"><img src="/static/img/cat-ropa-1.jpg" alt="" width="300" height="300" loading="lazy"></span>
+      ropa
+    </a>
+    <a class="cat-tile" href="{{ url_for('creators') }}?especialidad=props">
+      <span class="cat-img"><img src="/static/img/cat-props-2.jpg" alt="" width="300" height="300" loading="lazy"></span>
+      props
+    </a>
+    <a class="cat-tile" href="{{ url_for('creators') }}?especialidad=pelucas">
+      <span class="cat-img"><img src="/static/img/cat-pelucas-1.jpg" alt="" width="300" height="300" loading="lazy"></span>
+      pelucas
+    </a>
+    <a class="cat-tile" href="{{ url_for('creators') }}?especialidad=accesorios">
+      <span class="cat-img"><img src="/static/img/cat-accesorios-1.jpg" alt="" width="300" height="300" loading="lazy"></span>
+      accesorios
+    </a>
+    <a class="cat-tile" href="{{ url_for('index') }}#como-funciona">
+      <span class="cat-img cat-img-symbol" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="3"/><circle cx="7" cy="17" r="3"/><path d="m10 8 9 8M10 16l9-8"/></svg>
+      </span>
+      encargos
+    </a>
+    <a class="cat-tile" href="{{ url_for('creators') }}">
+      <span class="cat-img cat-img-symbol" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </span>
+      todo
+    </a>
   </div>
 </section>
 
@@ -57,9 +86,9 @@
   <div class="product-grid">
     {% for work in works %}
       <a class="product-card" href="{{ url_for('work_detail', slug=work.slug) }}">
-        <div class="product-img accent-{{ work.creator.accent }}">
-          <span class="thumb-initials">{{ work.title[:1] }}</span>
-        </div>
+        <span class="product-img">
+          <img src="{{ foto(work.slug) }}" alt="{{ work.title }}" width="600" height="600" loading="lazy">
+        </span>
         <h3 class="product-title">{{ work.title }}</h3>
         <p class="product-shop">por {{ work.creator.name }}</p>
         <p class="product-price">{{ work.price_note or "precio a consultar" }}</p>
@@ -83,7 +112,9 @@
   <div class="shop-grid">
     {% for creator in featured %}
       <a class="shop-card" href="{{ url_for('creator_detail', slug=creator.slug) }}">
-        <span class="shop-avatar accent-{{ creator.accent }}">{{ creator.name[:1] }}{{ creator.name.split(' ')[-1][:1] }}</span>
+        <span class="shop-avatar">
+          <img src="{{ foto(creator.slug) }}" alt="" width="128" height="128" loading="lazy">
+        </span>
         <div>
           <h3>{{ creator.name }}{% if creator.verified %} <span class="tag">verificado</span>{% endif %}</h3>
           <p>{{ creator.specialty }} · {{ creator.location }}</p>
