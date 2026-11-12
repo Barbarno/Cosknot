@@ -1,25 +1,31 @@
 {% extends "base.html" %}
 
 {% block title %}creadores - cosknot{% endblock %}
-{% block description %}directorio de creadores de cosplay: ropa, props y accesorios hechos a mano.{% endblock %}
+{% block description %}creadores de cosplay que publican ropa, props, pelucas y accesorios hechos a mano. filtra por especialidad y escríbeles.{% endblock %}
 
 {% block content %}
 <section class="page-head">
-  <p class="eyebrow">descubrimiento</p>
+  <p class="eyebrow">marketplace de cosplay</p>
   <h1>creadores</h1>
   <p class="lede">
-    {{ creators|length }} personas que hacen ropa, props y accesorios de cosplay.
-    filtra por especialidad o recorre la lista completa.
+    {{ creators|length }} personas publican aquí ropa, props, pelucas y accesorios de cosplay.
+    filtra por especialidad, mira su trabajo y escribe a quien te interese para comprar
+    una pieza o encargar la tuya.
   </p>
 </section>
 
 {% if creators %}
-  <div class="filter-bar" data-filter-bar>
+<section class="section" aria-labelledby="listado-titulo">
+  <div class="section-head">
+    <h2 id="listado-titulo">creadores publicados</h2>
+  </div>
+
+  <div class="filter-bar" data-filter-bar data-selected="{{ selected }}">
     <span class="filter-label" id="filtro-etiqueta">especialidad</span>
     <div class="filter-buttons" role="group" aria-labelledby="filtro-etiqueta">
-      <button type="button" class="chip is-active" data-filter="todas" aria-pressed="true">todas</button>
+      <button type="button" class="chip{% if selected == "todas" %} is-active{% endif %}" data-filter="todas" aria-pressed="{% if selected == "todas" %}true{% else %}false{% endif %}">todas</button>
       {% for specialty in specialties %}
-        <button type="button" class="chip" data-filter="{{ specialty }}" aria-pressed="false">{{ specialty }}</button>
+        <button type="button" class="chip{% if specialty == selected %} is-active{% endif %}" data-filter="{{ specialty }}" aria-pressed="{% if specialty == selected %}true{% else %}false{% endif %}">{{ specialty }}</button>
       {% endfor %}
     </div>
     <p class="filter-status" data-filter-status role="status" aria-live="polite"></p>
@@ -33,11 +39,11 @@
             <span class="thumb-initials">{{ creator.name[:1] }}{{ creator.name.split(' ')[-1][:1] }}</span>
           </div>
           <div class="card-body">
-            <p class="tag">{{ creator.specialty }}</p>
+            <p class="tag">{{ creator.specialty }}{% if creator.verified %} · verificado{% endif %}</p>
             <h3>{{ creator.name }}</h3>
             <p class="meta">{{ creator.location }}</p>
             <p class="card-bio">{{ creator.bio[:110] }}…</p>
-            <p class="card-count">{{ creator.works|length }} obras publicadas</p>
+            <p class="card-count">{{ creator.works|length }} obras publicadas · acepta encargos</p>
           </div>
         </a>
       </article>
@@ -47,7 +53,10 @@
   <p class="empty-state" data-empty-state hidden>
     no hay creadores en esta especialidad todavía. prueba con otra categoría.
   </p>
+</section>
 {% else %}
-  <p class="empty-state">todavía no hay creadores publicados.</p>
+  <p class="empty-state">
+    todavía no hay creadores publicados. si tú haces cosplay, escríbenos y te damos de alta.
+  </p>
 {% endif %}
 {% endblock %}

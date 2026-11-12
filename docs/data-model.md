@@ -1,5 +1,10 @@
 # modelo de datos
 
+cosknot es un marketplace de cosplay: un creador publica ropa, props, pelucas y
+accesorios, y un comprador los mira, los compra o pide un encargo. De momento el modelo
+solo guarda el escaparate, que son las dos tablas de abajo. Compras, encargos y pagos
+todavía no tienen tabla.
+
 Hay dos tablas, definidas en `models.py` con SQLAlchemy 2.x. No hay más tablas ni
 migraciones.
 
@@ -19,6 +24,7 @@ PostgreSQL en Neon.
 | `bio` | TEXT | no | | descripción del taller |
 | `contact_email` | VARCHAR(200) | no | | correo que sale en el `mailto:` |
 | `accent` | INTEGER | no | | número de paleta visual, por defecto 0 |
+| `verified` | BOOLEAN | no | | creador revisado por el equipo; sale la marca de verificado |
 | `created_at` | DATETIME | no | | fecha de alta, la pone el servidor |
 
 ## tabla `works`
@@ -57,8 +63,11 @@ alguna vez hace falta borrar, se hace desde el ORM o se añade `ondelete="CASCAD
 - Longitudes máximas: `creators.slug` y `name` 120, `specialty` 40, `location` 120,
   `contact_email` 200, `works.slug` 140, `title` 160, `price_note` 80, `status` 40.
   PostgreSQL las respeta; SQLite no comprueba `VARCHAR(n)`.
-- `specialty` es texto libre, sin `CHECK` ni tabla aparte. En `seed.py` hay tres
-  valores (`ropa`, `props`, `accesorios`) que salen en el filtro de `/creadores`.
+- `specialty` es texto libre, sin `CHECK` ni tabla aparte. Las cuatro especialidades
+  del marketplace son `ropa`, `props`, `pelucas` y `accesorios`, y son las que salen en
+  el filtro de `/creadores`.
+- `verified` marca si el creador ha pasado la revisión del equipo. Los del seed salen
+  verificados; el valor por defecto es `False`.
 - `status` también es texto libre. En el seed uso `disponible`, `encargo` y `agotado`.
 - `price_note` puede ser `NULL`; la plantilla muestra «a consultar».
 - No hay validación del correo: cualquier cadena de hasta 200 caracteres se acepta y

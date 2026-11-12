@@ -1,21 +1,35 @@
 ﻿# cosknot
 
-cosknot es una web para encontrar gente que hace cosplay (ropa, props y accesorios) y
-poder escribirle directamente, sin intermediarios. Es el proyecto del módulo de 2º de
-SMR, hecho con Flask y una base de datos.
+cosknot es un marketplace de cosplay. Los creadores publican ropa, props, pelucas y
+accesorios de cualquier juego, serie o anime, y la gente les compra piezas o les pide
+un encargo a medida.
 
-La idea no es copiar un marketplace enorme. De momento la web sirve para tres cosas:
-descubrir creadores, ver su trabajo y contactar con ellos por correo.
+Funcionamos como intermediario entre el creador y el comprador, igual que Etsy o
+Airbnb, pero solo de cosplay: el creador pone el taller y el trabajo, nosotros ponemos
+el escaparate, la ficha y el contacto. Las cuatro especialidades son ropa, props,
+pelucas y accesorios.
+
+Lo hemos hecho nosotros, los tres de 2º de SMR, con Flask y una base de datos:
+Daniel Barrasa (CEO y CMO), Jesús Larrazabal (CTO) y Daniel Torres (CFO).
 
 ## qué hay hecho
 
+En esta primera versión ya se puede entrar, mirar y escribirle a un creador. Comprar
+dentro de la web todavía no: el cobro y la comisión llegan más adelante.
+
 - portada con creadores destacados y obras recientes
-- listado de creadores con filtro por especialidad
+- listado de creadores con filtro por especialidad: ropa, props, pelucas y accesorios
 - ficha de cada creador con su biografía y sus obras
 - ficha de cada obra con precio orientativo, estado y botón de contacto
+- contacto directo por correo con el creador para comprar o pedir un encargo
+- despliegue en Render con base de datos en Neon, dominio propio y HTTPS
 - página 404 propia
 - `robots.txt` y `sitemap.xml` generados desde las rutas
 - `healthz` para comprobar que la base de datos responde
+
+El filtro sale de las cuatro especialidades del catálogo: ropa, props, pelucas y
+accesorios. Los creadores que aparecen en la web están verificados: son los que han
+pasado por el equipo antes de publicar.
 
 ## arrancarlo en local
 

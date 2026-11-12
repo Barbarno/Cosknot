@@ -69,9 +69,28 @@ def test_el_listado_muestra_los_creadores_del_seed(cliente):
     assert respuesta.status_code == 200
     cuerpo = respuesta.get_data(as_text=True)
     assert cuerpo.count('class="card creator-card"') == len(SEED_CREATORS)
-    for especialidad in ("ropa", "props", "accesorios"):
+    for especialidad in ("ropa", "props", "pelucas", "accesorios"):
         assert f'data-filter="{especialidad}"' in cuerpo
-    assert 'data-specialty="ropa"' in cuerpo
+    assert 'data-specialty="props"' in cuerpo
+
+
+def test_los_creadores_del_seed_salen_verificados(cliente):
+    respuesta = cliente.get("/creadores")
+    cuerpo = respuesta.get_data(as_text=True)
+    assert cuerpo.count("verificado") == len(SEED_CREATORS)
+
+
+def test_el_listado_preselecciona_la_especialidad_de_la_url(cliente):
+    respuesta = cliente.get("/creadores?especialidad=pelucas")
+    assert respuesta.status_code == 200
+    cuerpo = respuesta.get_data(as_text=True)
+    assert 'data-selected="pelucas"' in cuerpo
+
+
+def test_una_especialidad_inventada_no_rompe_el_listado(cliente):
+    respuesta = cliente.get("/creadores?especialidad=inventada")
+    assert respuesta.status_code == 200
+    assert 'data-selected="todas"' in respuesta.get_data(as_text=True)
 
 
 def test_la_ficha_del_creador_muestra_bio_y_obras(cliente, aplicacion):

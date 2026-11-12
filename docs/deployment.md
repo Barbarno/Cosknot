@@ -11,7 +11,7 @@ de verdad y no con el plan inicial.
 | plataforma | Render, servicio web `cosknot` (`srv-dbqte8bl550s73er4bcg`), plan free, Frankfurt |
 | Python | 3.13.17 |
 | base de datos | Neon, PostgreSQL 18, Frankfurt, base `cosknot`, usuario `cosknot_owner` |
-| datos | 3 creadores y 6 obras; la app siembra sola si `creators` está vacía |
+| datos | 7 creadores y 15 obras; la app siembra sola si `creators` está vacía |
 | dominio | `cosknot.duckdns.org`, con un registro **A** a `216.24.57.1` |
 | HTTPS | lo emite y renueva Render con Let's Encrypt |
 | coste | 0 € al mes, sin tarjeta |
@@ -76,7 +76,7 @@ En **Environment**:
 Render instala las dependencias y arranca gunicorn. Al arrancar, `create_app()` ejecuta
 `Base.metadata.create_all(engine)` y después `seed_database()`, que mete el catálogo de
 `seed.py` solo si `creators` está vacía. No hay paso de migraciones: la primera vez
-contra una base vacía la deja con 3 creadores y 6 obras.
+contra una base vacía la deja con 7 creadores y 15 obras.
 
 ### 5. secretos del repositorio
 
@@ -143,7 +143,7 @@ El build es corto. El progreso se sigue en **Render → Logs** o en la pestaña
    curl -s -o /dev/null -w "%{http_code} obra\n"     https://cosknot.onrender.com/obras/abrigo-de-invierno-fantasia
    ```
 
-   La portada tiene que mostrar 3 creadores, 3 obras y el contador. Un slug que no
+   La portada tiene que mostrar 3 creadores destacados, 3 obras y el contador. Un slug que no
    existe tiene que dar 404 con la plantilla propia, no un 500.
 
 3. Base de datos desde local:
@@ -153,7 +153,7 @@ El build es corto. El progreso se sigue en **Render → Logs** o en la pestaña
      python scripts/check_db.py
    ```
 
-   Tiene que imprimir las tablas y los conteos: `creators 3`, `works 6`.
+   Tiene que imprimir las tablas y los conteos: `creators 7`, `works 15`.
 
 4. Si Render marca el despliegue como fallido por el health check pero en el log pone
    `Listening at: http://0.0.0.0:10000`, el problema es el `SELECT 1` contra Neon, no

@@ -4,7 +4,7 @@
 {% block description %}{{ work.description[:150] }}{% endblock %}
 
 {% block content %}
-<nav class="breadcrumb" aria-label="ruta">
+<nav class="breadcrumb" aria-label="ruta de navegación">
   <a href="{{ url_for('creators') }}">creadores</a>
   <span aria-hidden="true">/</span>
   <a href="{{ url_for('creator_detail', slug=creator.slug) }}">{{ creator.name }}</a>
@@ -22,14 +22,14 @@
     <h1>{{ work.title }}</h1>
     <p class="meta">
       por <a href="{{ url_for('creator_detail', slug=creator.slug) }}">{{ creator.name }}</a>
-      · {{ creator.location }}
+      {% if creator.verified %}· verificado{% endif %} · {{ creator.location }}
     </p>
 
     <p class="work-description">{{ work.description }}</p>
 
     <dl class="detail-list">
       <div>
-        <dt>precio orientativo</dt>
+        <dt>precio</dt>
         <dd>{{ work.price_note or "a consultar con el creador" }}</dd>
       </div>
       <div>
@@ -42,9 +42,17 @@
       </div>
     </dl>
 
+    <p class="meta">
+      {% if work.status == "disponible" %}
+        esta pieza está hecha y se envía tal cual. si la quieres a tu medida, también se puede encargar.
+      {% else %}
+        esta pieza se hace por encargo: se toma medidas, se elige material y se entrega en el plazo que acordéis.
+      {% endif %}
+    </p>
+
     <div class="work-actions">
-      <a class="button button-primary" href="mailto:{{ creator.contact_email }}?subject={{ work.title|urlencode }}">escribir por esta obra</a>
-      <a class="button button-ghost" href="{{ url_for('creator_detail', slug=creator.slug) }}">ver perfil de {{ creator.name.split(' ')[0] | lower }}</a>
+      <a class="button button-primary" href="mailto:{{ creator.contact_email }}?subject={{ ("comprar o encargar: " ~ work.title)|urlencode }}">comprar o encargar</a>
+      <a class="button button-ghost" href="{{ url_for('creator_detail', slug=creator.slug) }}">ver perfil del creador</a>
     </div>
   </div>
 </article>

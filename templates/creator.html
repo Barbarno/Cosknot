@@ -4,7 +4,7 @@
 {% block description %}{{ creator.bio[:150] }}{% endblock %}
 
 {% block content %}
-<nav class="breadcrumb" aria-label="ruta">
+<nav class="breadcrumb" aria-label="ruta de navegación">
   <a href="{{ url_for('creators') }}">creadores</a>
   <span aria-hidden="true">/</span>
   <span>{{ creator.name }}</span>
@@ -15,19 +15,22 @@
     <span class="thumb-initials">{{ creator.name[:1] }}{{ creator.name.split(' ')[-1][:1] }}</span>
   </div>
   <div class="profile-info">
-    <p class="tag">{{ creator.specialty }}</p>
+    <p class="tag">{{ creator.specialty }}{% if creator.verified %} · verificado{% endif %}</p>
     <h1>{{ creator.name }}</h1>
-    <p class="meta">{{ creator.location }}</p>
+    <p class="meta">{{ creator.location }} · {{ works|length }} obras publicadas</p>
     <p class="bio">{{ creator.bio }}</p>
     <div class="profile-actions">
-      <a class="button button-primary" href="mailto:{{ creator.contact_email }}">escribir a {{ creator.name.split(' ')[0] | lower }}</a>
-      <span class="meta">{{ works|length }} obras · {{ creator.specialty }}</span>
+      <a class="button button-primary" href="mailto:{{ creator.contact_email }}?subject={{ ("encargo de cosplay: " ~ creator.name)|urlencode }}">escribir a {{ creator.name.split(' ')[0] | lower }}</a>
+      <a class="button button-ghost" href="{{ url_for('creators') }}">ver más creadores</a>
     </div>
+    <p class="meta">acepta encargos: le escribes, acordáis medidas y plazo, y la pieza se hace para ti.</p>
   </div>
 </header>
 
 <section class="section" aria-labelledby="obras-titulo">
-  <h2 id="obras-titulo">obras</h2>
+  <div class="section-head">
+    <h2 id="obras-titulo">obras de {{ creator.name.split(' ')[0] | lower }}</h2>
+  </div>
   {% if works %}
     <div class="grid work-grid">
       {% for work in works %}
@@ -47,7 +50,7 @@
       {% endfor %}
     </div>
   {% else %}
-    <p class="empty-state">este perfil todavía no tiene obras publicadas.</p>
+    <p class="empty-state">este perfil todavía no tiene obras publicadas. escríbele si quieres encargar algo.</p>
   {% endif %}
 </section>
 {% endblock %}

@@ -1,26 +1,28 @@
 {% extends "base.html" %}
 
-{% block title %}cosknot - encuentra a quien hace tu cosplay{% endblock %}
+{% block title %}cosknot - compra o encarga tu cosplay{% endblock %}
+{% block description %}marketplace de cosplay: piezas de ropa, props, pelucas y accesorios hechas a mano. compra lo que ya está hecho o encarga la tuya.{% endblock %}
 
 {% block content %}
 <section class="hero">
   <div class="hero-copy">
-    <p class="eyebrow">directorio de creadores</p>
-    <h1>el cosplay que imaginas existe. alguien lo está cosiendo ahora mismo.</h1>
+    <p class="eyebrow">marketplace de cosplay</p>
+    <h1>compra cosplay hecho a mano o encarga la pieza que te falta</h1>
     <p class="lede">
-      cosknot reúne a creadores de ropa, props y accesorios de cosplay en un solo
-      lugar. sin comisiones ni intermediarios: mira el trabajo, lee quién lo hace y
-      escríbele directamente.
+      aquí se publican piezas de ropa, props, pelucas y accesorios de cualquier juego,
+      serie o anime. si algo ya está hecho lo compras y llega; si no existe, hablas con
+      quien lo hace y te lo encarga a tus medidas. cosknot solo pone el escaparate y
+      el contacto: el trabajo es de quien lo firma.
     </p>
     <div class="hero-actions">
-      <a class="button button-primary" href="{{ url_for('creators') }}">descubrir creadores</a>
+      <a class="button button-primary" href="{{ url_for('creators') }}">ver creadores</a>
       <a class="button button-ghost" href="#como-funciona">cómo funciona</a>
     </div>
     <p class="hero-meta">
       {% if creator_count %}
-        {{ creator_count }} creadores publicados · ropa · props · accesorios
+        {{ creator_count }} creadores publicando ahora mismo · ropa · props · pelucas · accesorios
       {% else %}
-        ropa · props · accesorios
+        ropa · props · pelucas · accesorios
       {% endif %}
     </p>
   </div>
@@ -31,23 +33,49 @@
   </div>
 </section>
 
+<section class="section" aria-labelledby="categorias-titulo">
+  <div class="section-head">
+    <h2 id="categorias-titulo">qué puedes encontrar</h2>
+  </div>
+  <div class="category-grid">
+    <a class="category-card" href="{{ url_for('creators') }}?especialidad=ropa">
+      <h3>ropa</h3>
+      <p class="meta">trajes completos, capas, faldas y prendas cosidas a medida con prueba de ajuste.</p>
+    </a>
+    <a class="category-card" href="{{ url_for('creators') }}?especialidad=props">
+      <h3>props</h3>
+      <p class="meta">espadas, cascos y armas de espuma o impresión 3d, ligeras para aguantar la convención.</p>
+    </a>
+    <a class="category-card" href="{{ url_for('creators') }}?especialidad=pelucas">
+      <h3>pelucas</h3>
+      <p class="meta">pelucas cortadas y peinadas para un personaje concreto, con el color ya teñido.</p>
+    </a>
+    <a class="category-card" href="{{ url_for('creators') }}?especialidad=accesorios">
+      <h3>accesorios</h3>
+      <p class="meta">arneses, coronas, hebillas y piezas de resina que rematan el conjunto.</p>
+    </a>
+  </div>
+</section>
+
 <section class="section" id="como-funciona" aria-labelledby="como-funciona-titulo">
-  <h2 id="como-funciona-titulo">cómo funciona</h2>
+  <div class="section-head">
+    <h2 id="como-funciona-titulo">cómo funciona</h2>
+  </div>
   <ol class="steps">
     <li>
-      <span class="step-number">01</span>
-      <h3>explora</h3>
-      <p>filtra por especialidad y mira piezas reales, no catálogos infinitos.</p>
+      <span class="step-number" aria-hidden="true">01</span>
+      <h3>encuentra la pieza</h3>
+      <p>filtra por especialidad o busca el personaje. cada ficha dice el precio, si está disponible o si se hace por encargo.</p>
     </li>
     <li>
-      <span class="step-number">02</span>
-      <h3>conoce</h3>
-      <p>cada perfil cuenta cómo trabaja la persona, sus materiales y su forma de encargo.</p>
+      <span class="step-number" aria-hidden="true">02</span>
+      <h3>habla con quien la hace</h3>
+      <p>en el perfil tienes su especialidad, dónde está y cómo trabaja. le escribes por correo y acordáis medidas, tela y plazo.</p>
     </li>
     <li>
-      <span class="step-number">03</span>
-      <h3>escribe</h3>
-      <p>el contacto es directo por correo. tú y quien hace la pieza, sin intermediarios.</p>
+      <span class="step-number" aria-hidden="true">03</span>
+      <h3>compra o encarga</h3>
+      <p>si la pieza ya está hecha, la compras tal cual. si no, se hace a tu medida y la recibes cuando esté terminada.</p>
     </li>
   </ol>
 </section>
@@ -55,8 +83,8 @@
 {% if featured %}
 <section class="section" aria-labelledby="creadores-destacados">
   <div class="section-head">
-    <h2 id="creadores-destacados">creadores para empezar</h2>
-    <a class="link-more" href="{{ url_for('creators') }}">ver todos</a>
+    <h2 id="creadores-destacados">creadores destacados</h2>
+    <a class="link-more" href="{{ url_for('creators') }}">descubrir creadores</a>
   </div>
   <div class="grid creator-grid">
     {% for creator in featured %}
@@ -66,10 +94,11 @@
             <span class="thumb-initials">{{ creator.name[:1] }}{{ creator.name.split(' ')[-1][:1] }}</span>
           </div>
           <div class="card-body">
-            <p class="tag">{{ creator.specialty }}</p>
+            <p class="tag">{{ creator.specialty }}{% if creator.verified %} · verificado{% endif %}</p>
             <h3>{{ creator.name }}</h3>
             <p class="meta">{{ creator.location }}</p>
             <p class="card-bio">{{ creator.bio[:110] }}…</p>
+            <p class="card-count">{{ creator.works|length }} obras publicadas</p>
           </div>
         </a>
       </article>
@@ -82,18 +111,35 @@
 <section class="section" aria-labelledby="obras-recientes">
   <div class="section-head">
     <h2 id="obras-recientes">obras recientes</h2>
+    <a class="link-more" href="{{ url_for('creators') }}">ver todos los creadores</a>
   </div>
-  <ul class="work-list">
+  <div class="grid work-grid">
     {% for work in works %}
-      <li class="work-row">
-        <a href="{{ url_for('work_detail', slug=work.slug) }}">
-          <span class="work-title">{{ work.title }}</span>
-          <span class="work-creator">{{ work.creator.name }}</span>
-          <span class="work-price">{{ work.price_note or "a consultar" }}</span>
+      <article class="card work-card">
+        <a class="card-link" href="{{ url_for('work_detail', slug=work.slug) }}">
+          <div class="thumb accent-{{ work.creator.accent }}" aria-hidden="true">
+            <span class="thumb-initials">{{ work.title[:1] }}</span>
+          </div>
+          <div class="card-body">
+            <p class="tag">{{ work.status }}</p>
+            <h3>{{ work.title }}</h3>
+            <p class="meta">por {{ work.creator.name }} · {{ work.creator.specialty }}</p>
+            <p class="card-bio">{{ work.description[:100] }}…</p>
+            <p class="card-count">{{ work.price_note or "precio a consultar" }}</p>
+          </div>
         </a>
-      </li>
+      </article>
     {% endfor %}
-  </ul>
+  </div>
 </section>
 {% endif %}
+
+<section class="cta-band" aria-labelledby="publicar-titulo">
+  <h2 id="publicar-titulo">¿haces cosplay y quieres venderlo?</h2>
+  <p>
+    si coses, imprimes o pintas piezas de cosplay, publica tu trabajo y recibe encargos.
+    nos escribes con tu especialidad y un par de fotos y te damos de alta.
+  </p>
+  <a class="button button-primary" href="mailto:hola@cosknot.example?subject=quiero%20publicar%20mi%20trabajo%20en%20cosknot">publicar tu trabajo</a>
+</section>
 {% endblock %}

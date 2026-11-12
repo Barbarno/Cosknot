@@ -43,6 +43,9 @@ def main() -> None:
         }
 
     engine = create_engine(url, **opciones)
+    # Se recrean las tablas enteras porque el esquema cambia (columna verified).
+    # Los datos que hay ahora son de ejemplo, así que no se pierde nada.
+    Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
     sesion = sessionmaker(bind=engine, expire_on_commit=False)
 

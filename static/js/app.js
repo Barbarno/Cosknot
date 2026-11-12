@@ -39,5 +39,5 @@
     apply(chip.dataset.filter);
   });
 
-  apply("todas");
+  apply(bar.dataset.selected || "todas");
 })();

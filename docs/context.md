@@ -2,13 +2,20 @@
 
 ## de qué va
 
-cosknot es una web para gente a la que le gusta el cosplay y el trabajo hecho a mano
-relacionado con videojuegos, series, anime y otros mundos de ficción. La idea es juntar
-en un sitio a quien hace la ropa, los props y los accesorios, y a quien los busca.
+cosknot es un marketplace de cosplay. Un sitio donde quien hace ropa, props, pelucas y
+accesorios de videojuegos, series, anime y otros mundos de ficción publica sus piezas,
+y donde quien las busca las compra o pide un encargo a medida.
 
-Etsy me sirvió de referencia para entender la idea de conectar creadores con gente
-interesada, pero cosknot no quiere ser un clon. En esta primera versión solo hay
-descubrimiento y contacto.
+Somos el intermediario entre el creador y el comprador. El creador se encarga del
+taller y del trabajo; nosotros del escaparate, la ficha de la pieza y el contacto entre
+las dos partes. Etsy y Airbnb son la referencia de ese modelo, pero aquí solo hay
+cosplay: ropa, props, pelucas y accesorios.
+
+Los creadores que venden en cosknot son usuarios verificados: pasan una revisión del
+equipo antes de publicar, y en su ficha aparece la marca de verificado.
+
+El cobro dentro de la web y la comisión por venta quedan para más adelante. En esta
+primera versión el trato se cierra por correo con el creador.
 
 ## equipo
 
@@ -45,7 +52,8 @@ petición después tarda unos 50 segundos por el arranque, y no es un fallo.
 ## normas que sigo
 
 - Nada de framework de frontend: HTML renderizado en el servidor con Jinja.
-- La primera versión se centra en descubrir creadores y contactar, nada más.
+- La primera versión se centra en publicar piezas, descubrir creadores y contactar.
+  Comprar y cobrar dentro de la web llega después.
 - Las pruebas tienen que pasar en local y en GitHub antes de tocar producción.
 - Los secretos van en las variables de entorno de Render y en los secretos del
   repositorio, nunca en el código.

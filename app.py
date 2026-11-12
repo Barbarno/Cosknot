@@ -133,8 +133,11 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
 
     @app.route("/creadores")
     def creators() -> str:
+        selected = request.args.get("especialidad", "todas")
+        if selected not in SPECIALTIES:
+            selected = "todas"
         rows = g.db.scalars(select(Creator).order_by(Creator.name)).all()
-        return render_template("creators.html", creators=rows)
+        return render_template("creators.html", creators=rows, selected=selected)
 
     @app.route("/creadores/<slug>")
     def creator_detail(slug: str) -> str:

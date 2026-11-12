@@ -66,7 +66,7 @@ trigger se salta y solo queda el sondeo de salud.
 
 ## los datos vuelven al catálogo de ejemplo
 
-**Síntoma**: después de un despliegue, la web vuelve a tener 3 creadores y 6 obras.
+**Síntoma**: después de un despliegue, la web vuelve a tener 7 creadores y 15 obras.
 **Causa**: el disco de Render es efímero. Si falta `DATABASE_URL`, la app cae a SQLite
 en `cosknot.db`, responde 200 y pierde todo en el siguiente despliegue sin dar ningún
 error.

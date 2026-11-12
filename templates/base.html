@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}cosknot - creadores de cosplay{% endblock %}</title>
-  <meta name="description" content="{% block description %}descubre creadores de cosplay y su trabajo hecho a mano: ropa, props y accesorios.{% endblock %}">
+  <title>{% block title %}cosknot - marketplace de cosplay{% endblock %}</title>
+  <meta name="description" content="{% block description %}compra piezas de cosplay hechas a mano o encarga la tuya a quien la hace: ropa, props, pelucas y accesorios de cualquier juego, serie o anime.{% endblock %}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
@@ -19,6 +19,7 @@
       <nav class="site-nav" aria-label="navegación principal">
         <a href="{{ url_for('creators') }}">creadores</a>
         <a href="{{ url_for('index') }}#como-funciona">cómo funciona</a>
+        <a class="nav-cta" href="mailto:hola@cosknot.example?subject=quiero%20publicar%20mi%20trabajo%20en%20cosknot">publicar tu trabajo</a>
       </nav>
     </div>
   </header>
@@ -29,8 +30,15 @@
 
   <footer class="site-footer">
     <div class="wrap footer-inner">
-      <p class="footer-brand">cosknot</p>
-      <p class="footer-note">hecho a mano, sin intermediarios. <span aria-hidden="true">·</span> {{ current_year }}</p>
+      <div>
+        <p class="footer-brand">cosknot</p>
+        <p class="footer-note">marketplace de cosplay hecho a mano. compra una pieza o encárgala. <span aria-hidden="true">·</span> {{ current_year }}</p>
+      </div>
+      <nav class="footer-nav" aria-label="enlaces del pie">
+        <a href="{{ url_for('creators') }}">creadores</a>
+        <a href="{{ url_for('index') }}#como-funciona">cómo funciona</a>
+        <a href="mailto:hola@cosknot.example?subject=quiero%20publicar%20mi%20trabajo%20en%20cosknot">publicar tu trabajo</a>
+      </nav>
     </div>
   </footer>
 
