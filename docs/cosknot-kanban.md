@@ -21,13 +21,11 @@ mover cada tarjeta entre estas columnas
 
 ## en curso
 
-- [ ] conectar un dominio y https
-  motivo: el pr de `cosknot.is-a.dev` está abierto en is-a-dev/register, pendiente de merge; hasta entonces no hay custom domain ni certificado en render.
 - [ ] mover aquí el trabajo activo y añadir el responsable y la fecha límite
 
 ## hecho
 
-- [ ] creadas las reglas del espacio de trabajo y la estructura de memoria del proyecto
+- [x] creadas las reglas del espacio de trabajo y la estructura de memoria del proyecto
 - [x] crear el repositorio de github
 - [x] escribir el readme del proyecto
 - [x] definir el modelo de datos inicial
@@ -39,6 +37,7 @@ mover cada tarjeta entre estas columnas
 - [x] añadir los primeros modelos de base de datos
 - [x] añadir pruebas con pytest
 - [x] desplegar una versión privada de prueba
+- [x] conectar un dominio y https
 
 ## aprobado
 

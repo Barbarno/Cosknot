@@ -54,7 +54,7 @@ sin `DATABASE_URL` en el entorno se usa sqlite en `cosknot.db` (creado en la ra�
 - `docs/backups.md`: copias de seguridad y restauración de la base de datos.
 - `docs/data-model.md`: modelo de datos inicial (tablas, columnas, reglas y carencias).
 - `docs/troubleshooting/`: problemas, síntomas y soluciones.
-- `domains/cosknot.json`: registro de dominio para is-a.dev.
+- `domains/cosknot.json`: registro alternativo para is-a.dev, abierto como reserva; el dominio activo es el de DuckDNS.
 - `render.yaml`: blueprint del servicio en render.
 - `requirements.txt`: dependencias de python.
 
@@ -66,7 +66,13 @@ sin `DATABASE_URL` en el entorno se usa sqlite en `cosknot.db` (creado en la ra�
 - html y css
 - javascript vanilla
 - sqlite para el prototipo local
+- postgresql (neon)
+- gunicorn
 - pytest
 - git y github
+- github actions
+- render
+- duckdns
+- tls
 
 antes de añadir funciones nuevas, revisa `docs/cosknot-roadmap.md` y mantén la primera versión centrada en lo esencial: descubrir creadores y permitir el contacto.

@@ -15,29 +15,42 @@ cosknot no pretende ser un clon genérico de etsy
 
 ## estado actual
 
-el proyecto está en una etapa temprana de planificación y aprendizaje
-el enfoque actual del desarrollador es python y html con css todavía en nivel principiante
-el primer objetivo debería ser un mvp estrecho y funcional en lugar de un clon completo de etsy
+la aplicación está desplegada en producción en `https://cosknot.duckdns.org`, con base de datos gestionada, dominio propio, tls y ci/cd
+
+- el servicio corre en render, plan free, región frankfurt, sobre gunicorn con 2 workers y 4 threads
+- la base de datos es postgresql 18 en neon, región aws eu-central-1 (frankfurt), usada con la cadena pooled
+- el certificado tls lo emite y renueva render; el dns es un subdominio gratuito de duckdns
+- github actions ejecuta las pruebas en cada push y pull request, dispara el despliegue y hace una copia semanal de la base de datos
+- coste actual: 0 €/mes, sin tarjeta asociada
 
 ## stack
 
-- python
-- html
-- css nivel principiante
-- siguiente paso recomendado: flask jinja sqlite javascript vanilla y pytest
+- python 3.13
+- flask
+- jinja
+- sqlalchemy 2.1
+- postgresql (neon) en producción
+- sqlite en local
+- gunicorn
+- pytest
+- git y github
+- github actions
+- render
+- duckdns
 
-## dirección de diseño
+## arquitectura
 
-- colores primarios: blanco negro y terracota salmón
-- dirección visual: expresiva y creativa pero lo bastante limpia para un marketplace
-- evitar que cada página sea visualmente ruidosa solo porque el tema sea cosplay
-
-color terracota aprobado: #d97757
+el navegador resuelve el nombre contra el registro a de duckdns, que apunta a `216.24.57.1`, el ingress de render
+render termina el tls, sirve la aplicación con gunicorn y aplica el health check `/healthz`, que ejecuta `SELECT 1`
+la aplicación abre la conexión contra postgresql en neon por la cadena pooled, en la misma región
+en el plan free render duerme el servicio a los 15 min sin tráfico: la primera petición posterior tarda alrededor de 50 s por el cold start
 
 ## convenciones
 
-empezar con una aplicación web responsive renderizada en servidor antes de añadir un framework de frontend
-mantener la primera versión enfocada en descubrimiento páginas de producto y listados de vendedores
+mantener una aplicación web responsive renderizada en servidor antes de añadir un framework de frontend
+la primera versión se centra en el descubrimiento de creadores, las páginas de producto y los listados de vendedores
+las pruebas con pytest tienen que pasar en local y en ci antes de tocar producción
+los secretos viven en las variables de entorno de render y en los secretos del repositorio, nunca en el código
 
 ## regla de actualización
 
