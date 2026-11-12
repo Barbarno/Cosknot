@@ -19,7 +19,7 @@ services:
         generateValue: true
       - key: DATABASE_URL
         sync: false
-    # se activa despues del merge del PR en is-a.dev; si se pone antes, el
-    # blueprint falla la verificacion del dominio
-    # domains:
-    #   - cosknot.is-a.dev
+    # el dominio real ya esta activo y verificado en el panel de render, no por
+    # este blueprint. si algun dia se despliega desde render.yaml, esta es la lista.
+    domains:
+      - cosknot.duckdns.org
