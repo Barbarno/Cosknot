@@ -54,16 +54,16 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
         app.config.update(config)
         app.config["DATABASE_URL"] = normalize_database_url(app.config["DATABASE_URL"])
 
-    # en produccion la falta de una variable tiene que romper el arranque: con
-    # los valores por defecto anteriores la app respondia 200 firmada con un
-    # secreto publicado en el repo, o con la base de datos en el disco efimero
-    # del contenedor, y los datos desaparecian en el siguiente despliegue.
-    # render define RENDER=true por su cuenta en todos sus servicios.
+    # En producción, si falta una variable el arranque tiene que romper. Con los
+    # valores por defecto que había antes, la app respondía 200 firmada con un
+    # secreto publicado en el repo, o con la base de datos en el disco efímero del
+    # contenedor, y los datos desaparecían en el siguiente despliegue. Render
+    # define RENDER=true por su cuenta en todos sus servicios.
     if os.environ.get("RENDER") and not app.config.get("TESTING"):
         faltan = [k for k in ("SECRET_KEY", "DATABASE_URL") if not os.environ.get(k)]
         if faltan:
             raise RuntimeError(
-                "faltan variables de entorno en produccion: " + ", ".join(faltan)
+                "faltan variables de entorno en producción: " + ", ".join(faltan)
             )
 
     engine = build_engine(app.config["DATABASE_URL"])
@@ -72,9 +72,9 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
     app.extensions["db_session"] = session_factory
 
     Base.metadata.create_all(engine)
-    # gunicorn arranca dos workers y cada uno ejecuta create_app(): los dos
-    # pueden ver las tablas vacias y sembrar a la vez, y el segundo choca
-    # contra el indice unico de slug. Perder esa carrera es lo esperado.
+    # gunicorn arranca dos workers y cada uno ejecuta create_app(): los dos pueden
+    # ver las tablas vacías y sembrar a la vez, y el segundo choca contra el índice
+    # único de slug. Perder esa carrera es lo normal.
     try:
         with session_factory() as bootstrap:
             seed_database(bootstrap)
@@ -107,8 +107,8 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
         response.headers.setdefault(
             "Strict-Transport-Security", "max-age=31536000; includeSubDomains"
         )
-        # el alias de render sirve la misma app y no queremos que compita en
-        # buscadores con el dominio propio
+        # El alias de Render sirve la misma app y no quiero que compita en
+        # buscadores con el dominio propio.
         if request.host.endswith(".onrender.com"):
             response.headers.setdefault("X-Robots-Tag", "noindex")
         return response
@@ -186,7 +186,7 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
 
     @app.errorhandler(405)
     def method_not_allowed(error: Exception) -> tuple[str, int]:
-        # sin esto werkzeug devuelve su plantilla en ingles y delata el framework
+        # Sin esto, werkzeug devuelve su plantilla en inglés y se nota que es Flask.
         return render_template("404.html"), 405
 
     return app
