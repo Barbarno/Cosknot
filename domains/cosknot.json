@@ -1,4 +1,9 @@
 {
-  "owner": { "username": "Barbarno", "email": "RELLENA_TU_EMAIL" },
-  "records": { "CNAME": "cosknot.onrender.com" }
+  "owner": {
+    "username": "Barbarno",
+    "email": "danielbarrasaperezz@gmail.com"
+  },
+  "records": {
+    "A": ["216.24.57.1"]
+  }
 }
