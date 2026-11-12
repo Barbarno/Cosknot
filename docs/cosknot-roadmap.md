@@ -18,21 +18,21 @@ no se hacen las tres cosas a la vez.
 - elegir el competidor más conocido
 - preparar un SWOT corto y una idea del mercado
 
-### Daniel B.
+### Daniel Barrasa (CEO y CMO)
 
 - llevar el repositorio de GitHub
 - mantener el README
 - organizar el tablero
 - pensar el posicionamiento y las primeras pruebas de crecimiento
 
-### Jesús
+### Jesús Larrazabal (CTO)
 
 - elegir el stack
 - definir el modelo de datos y la arquitectura
 - pruebas y despliegue
 - valorar si la IA aporta algo de verdad o es adorno
 
-### Daniel T.
+### Daniel Torres (CFO)
 
 - ver de dónde pueden salir ingresos
 - calcular costes iniciales y de mantenimiento

@@ -12,9 +12,9 @@ descubrimiento y contacto.
 
 ## equipo
 
-- Daniel Barrasa: idea, documentación y GitHub.
-- Jesús Larrazabal: desarrollo y despliegue.
-- Daniel Torres: cuentas y costes.
+- Daniel Barrasa: CEO y CMO. Lleva el repositorio, la documentación y la coordinación.
+- Jesús Larrazabal: CTO. Lleva el desarrollo, la arquitectura y el despliegue.
+- Daniel Torres: CFO. Lleva cuentas, costes e ingresos.
 
 ## cómo está ahora
 
