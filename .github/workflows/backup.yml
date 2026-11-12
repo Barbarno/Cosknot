@@ -34,9 +34,26 @@ jobs:
             exit 1
           fi
 
+      # el artefacto lo puede descargar cualquiera con cuenta de github, así que
+      # el dump no se sube en claro: se cifra aquí y el fichero plano se borra.
+      - name: Cifrar el dump
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          if [ -z "${BACKUP_PASSPHRASE:-}" ]; then
+            echo "falta BACKUP_PASSPHRASE" >&2
+            exit 1
+          fi
+          DUMP="cosknot-db-${{ github.run_number }}.dump"
+          openssl enc -aes-256-cbc -pbkdf2 -salt \
+            -in "$DUMP" -out "$DUMP.enc" -pass env:BACKUP_PASSPHRASE
+          rm -f "$DUMP"
+          echo "dump cifrado: $(stat -c%s "$DUMP.enc") bytes"
+
       - name: Subir artefacto
         uses: actions/upload-artifact@v4
         with:
           name: cosknot-db-${{ github.run_number }}
-          path: cosknot-db-${{ github.run_number }}.dump
+          path: cosknot-db-${{ github.run_number }}.dump.enc
           retention-days: 30
