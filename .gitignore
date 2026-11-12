@@ -1,0 +1,16 @@
+# herramientas locales de agentes
+.opencode/
+opencode.json
+
+# obsidian
+.obsidian/
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# copias de seguridad
+*.tar.gz
+*.bundle
