@@ -62,6 +62,11 @@ Estas son las que convierten la web en marketplace de verdad, en orden.
 - [x] montar la ficha de creador
 - [x] montar la ficha de obra con precio y estado
 - [x] añadir el contacto directo por correo
+- [x] añadir el buscador en `/buscar?q=` sobre creadores y obras
+- [x] montar la página de equipo en `/nosotros`
+- [x] rediseñar la web con el patrón de los marketplaces grandes: cabecera fija con
+  buscador, barra de categorías, rejilla de tarjetas cuadradas, listado con barra
+  lateral de filtros y ficha de obra a dos columnas
 - [x] crear los modelos de la base de datos
 - [x] añadir pruebas con pytest
 - [x] desplegar en Render con Neon
