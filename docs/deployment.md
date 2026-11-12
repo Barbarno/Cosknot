@@ -100,9 +100,11 @@ git push origin main
 Pasan dos cosas a la vez:
 
 1. Render ve el commit y despliega por su cuenta.
-2. `deploy.yml` se dispara con el push, fuerza el despliegue por la API y sondea
-   `https://cosknot.onrender.com/healthz` durante 5 minutos. Si no responde, el
-   workflow sale en rojo.
+2. `deploy.yml` se dispara con el push, busca el despliegue de ese commit en la API de
+   Render y espera a que quede en `live`. Después comprueba `/healthz` para confirmar
+   que la web responde.
+
+Si algo falla, el flujo sale en rojo.
 
 También se puede lanzar a mano desde **Actions → despliegue → Run workflow**.
 

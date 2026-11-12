@@ -61,7 +61,7 @@ prohíbe el uso comercial, así que cosknot no encaja. Se queda como reserva en
 - Render duerme el servicio a los 15 minutos sin tráfico.
 - Render da 5 GB de banda al mes.
 - Neon da 1 GB de almacenamiento y 100 horas de cómputo al mes.
-- No hay copias de seguridad automáticas de Neon; por eso el workflow del domingo hace
+- No hay copias de seguridad automáticas de Neon; por eso el flujo del domingo hace
   un `pg_dump`.
 
 ## fuentes

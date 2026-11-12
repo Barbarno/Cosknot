@@ -6,11 +6,11 @@ Formato: síntoma, causa y arreglo. Los pasos de despliegue están en
 ## la primera visita tarda unos 50 segundos
 
 **Síntoma**: tras un rato sin tráfico, la primera petición tarda muchísimo y luego
-carga. El workflow de despliegue puede salir en rojo en el paso que sondea `/healthz`.
+carga. El flujo de despliegue puede salir en rojo en el paso que sondea `/healthz`.
 **Causa**: el plan free de Render duerme el servicio a los 15 minutos. La primera
 petición paga el arranque de gunicorn, la carga de Flask y SQLAlchemy, el `create_all`
 con el seed y la reconexión a Neon, que también se despierta.
-**Arreglo**: no es una caída. El workflow da 5 minutos de margen. Si tarda más, hay que
+**Arreglo**: no es una caída. El flujo de despliegue da 5 minutos de margen. Si tarda más, hay que
 mirar los logs, porque entonces el problema es otro.
 
 ## `/healthz` devuelve 503
@@ -60,7 +60,7 @@ desactiva la caché.
 Actions no aparece ninguna ejecución.
 **Causa**: el autodespliegue está apagado, mira otra rama, o el push no llegó a `main`.
 **Arreglo**: revisar **Settings → Build & Deploy** en Render (Auto-Deploy en yes,
-trigger `commit`, branch `main`). En GitHub, mirar si el workflow está activo y si
+trigger `commit`, branch `main`). En GitHub, mirar si el flujo de trabajo está activo y si
 existen los secretos `RENDER_API_KEY` y `RENDER_SERVICE_ID`; si faltan, el paso del
 trigger se salta y solo queda el sondeo de salud.
 

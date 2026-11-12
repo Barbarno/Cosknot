@@ -1,15 +1,15 @@
 # copias de seguridad y despliegue
 
-## qué hace cada workflow
+## qué hace cada flujo de trabajo
 
-| workflow | cuándo | qué hace | cuánto se guarda |
+| flujo | cuándo | qué hace | cuánto se guarda |
 |---|---|---|---|
-| `.github/workflows/deploy.yml` | push a `main` o a mano | pide un despliegue a la API de Render y espera a que `/healthz` devuelva 200 (20 intentos de 15 s) | nada |
+| `.github/workflows/deploy.yml` | push a `main` o a mano | busca el despliegue de ese commit en la API de Render y espera a que quede en `live` | nada |
 | `.github/workflows/backup.yml` | domingos a las 03:00 UTC o a mano | hace un `pg_dump` en formato custom y lo sube como artefacto `cosknot-db-<run_number>` | 30 días |
 
 El servicio tiene el autodespliegue activado en Render, así que normalmente Render
-despliega solo cuando ve el commit. El workflow fuerza el despliegue cuando el polling
-no lo pilla y, de paso, avisa si `/healthz` no responde.
+despliega solo cuando ve el commit. El flujo de despliegue lo fuerza cuando el sondeo
+de Render no lo pilla y, de paso, avisa si `/healthz` no responde.
 
 ## secretos del repositorio
 
@@ -32,8 +32,8 @@ gh secret set NEON_DATABASE_URL
 pg_restore --clean --no-owner -d "$NEON_DATABASE_URL" cosknot-db-N.dump
 ```
 
-`N` es el número de ejecución del workflow. El dump se descarga desde la pestaña
-Artifacts de esa ejecución.
+`N` es el número de ejecución del flujo de trabajo. El dump se descarga desde la
+pestaña Artifacts de esa ejecución.
 
 ## fallos que ya me han pasado
 
