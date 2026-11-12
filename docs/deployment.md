@@ -1,124 +1,206 @@
-# despliegue de cosknot en render + neon
+# despliegue de cosknot: estado real
 
-orden de ejecución: de arriba abajo, sin saltos. el paso 6 se puede dejar para después del primer deploy.
+lo que hay desplegado hoy, cómo se llegó ahí y cómo se repite. los pasos son los que se ejecutaron de verdad, no el plan inicial.
 
-## 0. requisitos
+## 1. estado actual
 
-- cuenta de github con el repo subido y rama `main`.
-- python 3.13.17 en local si vas a probar antes de desplegar (no es obligatorio para render).
-- cuenta de render (registro con github, sin tarjeta).
-- cuenta de neon (registro con github, sin tarjeta).
+| qué | valor |
+|---|---|
+| URL de producción | `https://cosknot.onrender.com` |
+| plataforma | Render, web service `cosknot`, id `srv-dbqte8bl550s73er4bcg`, plan free, región Frankfurt |
+| runtime | Python 3.13.17 |
+| base de datos | Neon, proyecto `cosknot`, Postgres 18, AWS `eu-central-1` (Frankfurt), base `cosknot`, usuario `cosknot_owner` |
+| datos | `creators` 10 filas, `works` 24; la app siembra sola al arrancar si `creators` está vacía |
+| dominio | `cosknot.onrender.com` activo; `cosknot.is-a.dev` añadido como custom domain (id `cdm-dbqtj9mi0phs738hnum0`) en estado `unverified` |
+| TLS | Render emite y renueva el certificado Let's Encrypt del subdominio. `cosknot.is-a.dev` no tiene TLS hasta que el CNAME resuelva |
+| coste | 0 €/mes (Render free + Neon free, sin tarjeta) |
+| cold start | Render duerme el servicio a los 15 min sin tráfico; la primera petición después tarda ~50 s |
+| health check | `/healthz` (configurado en Render como health check path) |
 
-## 1. crear el proyecto en neon
+el servicio se creó desde **Public Git Repository** apuntando a `https://github.com/Barbarno/Cosknot`, rama `main`. Render tiene `autoDeploy: yes` con `autoDeployTrigger: commit`: redespliega al detectar el commit nuevo en `main`.
 
-1. entra en https://console.neon.tech y crea un proyecto.
-2. región: la más cercana a frankfurt (render `frankfurt` y neon `aws-eu-central-1` quedan en el mismo continente; evita `us-east`).
-3. base de datos y usuario: deja los valores por defecto (`neondb`, rol `neondb_owner`) o define uno propio.
-4. abre el panel **Connect** y copia la cadena **pooled**. es la que lleva `-pooler` en el host:
+consecuencia: `render.yaml` **no** es la fuente de verdad del servicio. Existe en el repo como referencia, pero el servicio no se creó desde un Blueprint, así que editarlo no cambia nada en Render.
 
-```
-postgresql://USUARIO:PASSWORD@ep-xxxx-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require
-```
+## 2. reproducir el despliegue desde cero
 
-5. guarda esa cadena. no la pegues en el repo, ni en un `.md`, ni en un issue: va directa al panel de render.
+### 2.1 base de datos en Neon
 
-si copias la cadena con `-pooler` mal, la app arranca pero cada request abre una conexión directa y neon empieza a rechazar conexiones al llegar al límite del plan free.
+1. https://console.neon.tech → crear proyecto.
+2. nombre `cosknot`, región **AWS eu-central-1 (Frankfurt)**, Postgres 18.
+3. base de datos `cosknot`, usuario/rol `cosknot_owner`.
+4. panel **Connect** → copiar la cadena **pooled** (la que lleva `-pooler` en el host). Debe quedar **sin query params**:
 
-## 2. crear el web service en render
+   ```
+   postgresql://cosknot_owner:PASSWORD@ep-xxxx-pooler.eu-central-1.aws.neon.tech/cosknot
+   ```
 
-1. https://dashboard.render.com → **New** → **Blueprint** si vas a usar `render.yaml`, o **New** → **Web Service** si lo configuras a mano.
-2. conecta github y elige el repo de cosknot.
-3. si eliges Blueprint, render lee `render.yaml` del repo y crea el servicio con build, start, health check y plan ya puestos. si lo haces a mano, rellena:
-   - runtime: **Python 3**
-   - build command: `pip install -r requirements.txt`
-   - start command: `gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 60`
-   - health check path: `/healthz`
-   - plan: **Free**
-   - región: **Frankfurt** (EU Central)
-4. rama: `main`. auto deploy: activado.
+   no añadas `?sslmode=require`: la app mete `sslmode=require` ella misma en `build_engine()` (`app.py`), junto con `pool_pre_ping=True`.
 
-## 3. variables de entorno en render
+5. no pegues la cadena en el repo, en un `.md` ni en un issue. Va directa al panel de Render.
+
+### 2.2 servicio en Render
+
+1. https://dashboard.render.com → **New** → **Web Service**.
+2. pestaña **Public Git Repository** → `https://github.com/Barbarno/Cosknot`.
+3. rellenar:
+   - **Name**: `cosknot`
+   - **Region**: Frankfurt (EU Central)
+   - **Branch**: `main`
+   - **Runtime**: Python 3
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 60`
+   - **Health Check Path**: `/healthz`
+   - **Instance Type**: Free
+   - **Auto-Deploy**: Yes, trigger `commit`
+4. crear el servicio.
+
+### 2.3 variables de entorno
 
 en **Environment** del servicio:
 
 | variable | valor |
 |---|---|
-| `DATABASE_URL` | la cadena de neon del paso 1, con `-pooler` |
-| `SECRET_KEY` | generada por render o `python -c "import secrets;print(secrets.token_hex(32))"` |
+| `DATABASE_URL` | cadena pooled de Neon del paso 2.1, sin query params |
+| `SECRET_KEY` | generada, 64 caracteres (`python -c "import secrets;print(secrets.token_hex(32))"`) |
 | `PYTHON_VERSION` | `3.13.17` |
-| `FLASK_ENV` | `production` |
 
-`DATABASE_URL` va con `sync: false` en `render.yaml`: render no la versiona y la pide al crear el servicio. si el servicio ya existe, se pega a mano en el panel.
+`FLASK_ENV` no hace falta: `app.py` usa `production` por defecto. `PYTHONUNBUFFERED` tampoco es necesario para el deploy.
 
-## 4. primer deploy
+### 2.4 primer arranque
 
-1. pulsa **Create Web Service** / **Deploy**. el primer build tarda 2-5 min (instala `psycopg` y compila lo que falte).
-2. mira los logs hasta que aparezca `Listening at: http://0.0.0.0:10000` y las migraciones/creación de tablas hayan corrido.
-3. si el deploy falla en build, el log dice el paquete exacto. si falla en runtime, casi siempre es `DATABASE_URL` ausente o sin `sslmode=require`.
+al crear el servicio, Render hace el build (`pip install -r requirements.txt`: flask, gunicorn, sqlalchemy, psycopg[binary], python-dotenv, pytest) y arranca gunicorn. En el arranque, `create_app()` ejecuta `Base.metadata.create_all(engine)` y luego `seed_database()`, que inserta el catálogo de `seed.py` solo si `creators` está vacía. No hay paso de migraciones ni script manual: la primera vez que arranca contra una base vacía, la deja con 10 creadores y 24 obras.
 
-## 5. verificar
+### 2.5 secretos del repositorio
 
-1. `https://cosknot.onrender.com/healthz` debe devolver `200` con un cuerpo corto (`ok` o similar). si devuelve 502/503 el proceso no arrancó.
-2. `https://cosknot.onrender.com/` debe renderizar la home con datos reales de la db (no una lista vacía por error silencioso).
-3. en neon, panel **Monitoring**, debe verse la conexión entrando en el momento del request.
-4. primera petición tras 15 min de inactividad tarda ~1 min: es el cold start, no una caída.
+los tres secretos (`RENDER_API_KEY`, `RENDER_SERVICE_ID`, `NEON_DATABASE_URL`) y cómo se generan están en `docs/backups.md`. `RENDER_SERVICE_ID` es `srv-dbqte8bl550s73er4bcg`.
 
-la ruta `/healthz` la implementa `app.py` y devuelve 200 sin tocar la base de datos. si no existe, render marca el health check como fallido y no promociona el deploy.
+### 2.6 dominio (después del merge)
 
-## 6. dominio `cosknot.is-a.dev` (is-a.dev)
+ver sección 5. El bloque `domains:` de `render.yaml` sigue comentado a propósito: si el blueprint se aplicara con el CNAME sin resolver, la verificación del dominio falla el deploy.
 
-1. haz fork de https://github.com/is-a-dev/register → botón **Fork**. el fork queda en `https://github.com/TU_USUARIO/register`.
-2. en tu fork, crea el fichero `domains/cosknot.json` con el contenido de `domains/cosknot.json` de este repo:
+## 3. desplegar cambios
+
+### 3.1 por push a `main`
+
+```bash
+git push origin main
+```
+
+pasan dos cosas en paralelo:
+
+1. **Render** detecta el commit nuevo (`autoDeploy: yes`, trigger `commit`) y arranca build + deploy por su cuenta.
+2. **`.github/workflows/deploy.yml`** se dispara con el push: hace `POST /v1/services/<id>/deploys` contra la API de Render para forzar el deploy si el polling no lo pilla, y después sondea `https://cosknot.onrender.com/healthz` hasta 20 veces cada 15 s. Si no responde 200 en 5 min, el workflow se marca en rojo. Si faltan `RENDER_API_KEY` o `RENDER_SERVICE_ID`, el paso del trigger se salta con `exit 0` y solo queda la comprobación de salud.
+
+el workflow también se puede lanzar a mano desde **Actions → deploy → Run workflow**.
+
+### 3.2 forzar un deploy a mano por API
+
+```bash
+curl --fail --silent --show-error \
+  -X POST \
+  -H "Authorization: Bearer $RENDER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{}' \
+  https://api.render.com/v1/services/srv-dbqte8bl550s73er4bcg/deploys
+```
+
+responde con el objeto del deploy (`id`, `status`, `commit`). el mismo endpoint es el que usa el workflow.
+
+### 3.3 cuánto tarda
+
+el build es corto (seis paquetes, `psycopg[binary]` viene en wheel), pero no hay duración medida en el repo: el margen que da el workflow es de **5 minutos** (20 intentos × 15 s), y con eso sobra. Si el servicio estaba dormido, el primer `/healthz` suma el cold start de ~50 s. El progreso se sigue en **Render → Logs** del deploy, o en la pestaña **Deploys** del servicio.
+
+## 4. verificar
+
+1. health check:
+
+   ```bash
+   curl -s https://cosknot.onrender.com/healthz
+   ```
+
+   debe devolver exactamente `{"status":"ok"}`. Ojo: `/healthz` **sí** toca la base de datos, ejecuta `SELECT 1`; si la conexión falla devuelve `{"status":"error"}` con 503. Un 503 aquí es problema de `DATABASE_URL`, no del proceso.
+
+2. rutas públicas, todas deben dar 200 con contenido real:
+
+   ```bash
+   curl -s -o /dev/null -w "%{http_code} /\n"        https://cosknot.onrender.com/
+   curl -s -o /dev/null -w "%{http_code} /creadores\n" https://cosknot.onrender.com/creadores
+   curl -s -o /dev/null -w "%{http_code} detalle\n"  https://cosknot.onrender.com/creadores/marisol-vega
+   curl -s -o /dev/null -w "%{http_code} obra\n"     https://cosknot.onrender.com/obras/abrigo-de-invierno-fantasia
+   ```
+
+   la home muestra 3 creadores destacados, 3 obras y el contador de creadores. Si sale vacía con 200, la base está vacía o el seed no corrió. Un slug inexistente debe dar 404 con la plantilla `404.html`, no un error 500.
+
+3. base de datos desde local, con la cadena pooled en el entorno:
+
+   ```bash
+   DATABASE_URL="postgresql://cosknot_owner:PASSWORD@ep-xxxx-pooler.eu-central-1.aws.neon.tech/cosknot" \
+     python scripts/check_db.py
+   ```
+
+   imprime la lista de tablas y el conteo de `creators` y `works`. Esperado: `['creators', 'works']`, `creators 10`, `works 24`. El script exige `DATABASE_URL` (si falta, `KeyError`), convierte el esquema a `postgresql+psycopg://` y conecta con `sslmode=require`.
+
+4. si Render marca el deploy como fallido en el health check pero el log dice `Listening at: http://0.0.0.0:10000`, el problema es el `SELECT 1` contra Neon, no gunicorn.
+
+## 5. cerrar el dominio cuando mergeen el PR
+
+estado: el custom domain `cosknot.is-a.dev` ya está añadido en Render (id `cdm-dbqtj9mi0phs738hnum0`) y figura como `unverified`. El PR `is-a.dev/register#61033` está abierto. Mientras no se mergee, no hay registro DNS que resolver y la verificación no puede pasar.
+
+1. **fork del registro**: fork de `https://github.com/is-a-dev/register` en la cuenta `Barbarno`. El fichero va en `domains/cosknot.json` del fork, y su contenido es el de `domains/cosknot.json` de este repo:
+
    ```json
    {
-     "owner": { "username": "Barbarno", "email": "RELLENA_TU_EMAIL" },
+     "owner": { "username": "Barbarno", "email": "EMAIL_DEL_OWNER" },
      "records": { "CNAME": "cosknot.onrender.com" }
    }
    ```
-   el `email` lo pone el dueño de la cuenta (el mismo con el que se firmó el fork en is-a.dev); `username` es el usuario de github, no el nombre del proyecto.
-3. abre el PR contra `is-a.dev/register`, rama `main`, título `feat: add cosknot`. el PR lo revisa un humano; mediana de merge ~1 día, casos de hasta una semana.
-4. si el bot de validación se queja, revisa que el json esté en `domains/` y que el `CNAME` no lleve `https://` ni barra final.
 
-## 7. tras el merge: custom domain en render
+   el `username` es el de GitHub, no el nombre del proyecto. El `CNAME` va sin `https://` y sin barra final. El email es el de la cuenta con la que se firmó en is-a.dev.
 
-1. comprueba que el DNS ya resuelve: `nslookup cosknot.is-a.dev` debe devolver el CNAME hacia `cosknot.onrender.com`.
-2. en render, servicio → **Settings** → **Custom Domains** → **Add Custom Domain** → `cosknot.is-a.dev`.
-3. render verifica el registro y emite el certificado let's encrypt. puede tardar de minutos a unas horas; hasta que el DNS propague no hay HTTPS y el navegador da error de certificado.
-4. si usas el blueprint, descomenta el bloque `domains:` de `render.yaml` y redespliega en vez de hacerlo a mano.
-5. verifica: `https://cosknot.is-a.dev/healthz` → 200 y candado válido.
+2. **esperar el merge** del PR `#61033`. Lo revisa una persona; hasta que entra en `main` del registro, el DNS no existe.
 
-## 8. fallos típicos
+3. **confirmar el DNS**:
 
-| síntoma | causa | arreglo |
-|---|---|---|
-| los datos desaparecen en cada deploy | sqlite en el filesystem efímero de render | `DATABASE_URL` a neon; nunca sqlite en producción |
-| el primer acceso tras un rato tarda ~1 min | render duerme a los 15 min de inactividad en free | aceptarlo, o pasar a plan de pago / cloud run |
-| neon suspende el compute a mitad de mes | keep-alive o ping periódico gastando las 100 cu-horas | quitar cualquier cron/ping contra la db; dejar scale-to-zero |
-| `too many connections` en los logs | cadena sin `-pooler` | copiar la cadena pooled de neon |
-| cambios en el repo no aparecen | auto deploy desactivado o rama distinta | revisar rama y **Auto-Deploy** en settings |
-| el dominio nuevo da error de certificado | DNS aún sin propagar | esperar; render no emite TLS contra un CNAME inexistente |
-| 502 tras el deploy | el proceso no arranca (import error, variable ausente) | leer los logs del deploy, no el health check |
+   ```bash
+   nslookup cosknot.is-a.dev
+   ```
 
-## 9. copia de seguridad semanal
+   debe devolver un CNAME hacia `cosknot.onrender.com`. Si el resolver local cachea el fallo anterior, probar con `nslookup cosknot.is-a.dev 1.1.1.1`.
 
-neon free da 6 h de historial, no un backup eterno. una vez por semana, desde tu máquina:
+4. **verificar el dominio en Render**, cuando el DNS ya resuelve. Por panel: servicio → **Settings** → **Custom Domains** → `cosknot.is-a.dev` → **Verify**. Por API:
 
-```bash
-pg_dump "postgresql://USUARIO:PASSWORD@ep-xxxx-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require" \
-  -Fc -f cosknot-$(date +%Y%m%d).dump
-```
+   ```bash
+   curl --fail --silent --show-error \
+     -X POST \
+     -H "Authorization: Bearer $RENDER_API_KEY" \
+     https://api.render.com/v1/services/srv-dbqte8bl550s73er4bcg/custom-domains/cdm-dbqtj9mi0phs738hnum0/verify
+   ```
 
-el `.dump` va fuera del repo (el `.gitignore` ya excluye `*.dump`). restaurar:
+   el estado pasa de `unverified` a verificado cuando Render ve el CNAME.
 
-```bash
-pg_restore -d "CADENA_DE_DESTINO" --clean --if-exists cosknot-20260101.dump
-```
+5. **TLS**: lo emite Render solo, con Let's Encrypt, en cuanto la verificación pasa. No hay certificado que subir ni renovar a mano. Puede tardar de minutos a unas horas; hasta entonces el navegador da error de certificado aunque el DNS ya esté bien. Se comprueba con:
 
-`pg_dump` va contra la cadena pooled sin problema; usa `--no-sync` solo si sabes lo que haces.
+   ```bash
+   curl -sI https://cosknot.is-a.dev/healthz
+   ```
 
-## 10. reglas que no se rompen
+   `200` y certificado válido. Mientras el dominio no esté cerrado, `https://cosknot.onrender.com` sigue siendo la URL de producción y la que usan el workflow y los chequeos.
 
-- `.env` nunca en el repo. el `.gitignore` lo excluye y `render.yaml` no lo versiona.
-- la `DATABASE_URL` solo existe en el panel de render y en tu `.env` local.
-- nada de sqlite en render.
-- nada de keep-alive contra neon.
+6. opcional: cuando el dominio verifique, descomentar el bloque `domains:` de `render.yaml` para que el repo lo refleje. No es necesario para que funcione; el dominio ya está añadido en el panel.
+
+## 6. si algo se rompe
+
+- **síntoma → causa → arreglo** de los fallos de esta combinación: `docs/troubleshooting/render-neon.md`. Cubre base vacía tras deploy, `could not connect to server`, prepared statements con el pooler, cold start, cuota de Neon, banda de Render, TLS del dominio y 502 tras el deploy.
+- **backups, restauración y secretos**: `docs/backups.md`. Los dumps los genera `.github/workflows/backup.yml` los domingos a las 03:00 UTC (formato custom, artefacto `cosknot-db-<run_number>`, 30 días de retención).
+
+### rollback
+
+si un deploy deja el servicio roto:
+
+1. Render → servicio `cosknot` → **Deploys**.
+2. localizar el último deploy sano (el anterior al que rompió).
+3. menú **⋯** de esa fila → **Rollback to this deploy**.
+
+Render redespliega ese commit. Los dos últimos deploys siempre están ahí, así que el rollback no depende de nada local. Después del rollback, comprobar `/healthz` y la home, y arreglar el commit en `main` con un revert en vez de dejar el servicio apuntando a un commit viejo: el siguiente push a `main` (o el autoDeploy de Render) vuelve a desplegar la cabeza de rama y deshace el rollback.
+
+si el problema es de datos y no de código, el rollback no sirve: restaurar el dump desde `docs/backups.md`.
