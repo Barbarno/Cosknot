@@ -8,7 +8,9 @@ cosknot no pretende ser una copia de un marketplace general. En esta primera ver
 
 ## desplegado
 
-- producción: https://cosknot.onrender.com, con health check en `/healthz`.
+- producción: https://cosknot.duckdns.org, con health check en `/healthz`.
+- dominio: subdominio gratuito de DuckDNS, apunta a render con un registro **A** a `216.24.57.1` (el ingress de render); DuckDNS no admite CNAME en este caso porque el nombre es apex para la PSL.
+- servicio: https://cosknot.onrender.com sigue activo como URL del servicio, y es la que usan los workflows de CI para sondear `/healthz`.
 - plataforma: render en plan free, región frankfurt, con base de datos neon (postgres) en la misma región.
 - el servicio se duerme tras 15 min sin tráfico: la primera petición siguiente tarda alrededor de 50 s por el cold start, no es una caída.
 

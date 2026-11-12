@@ -65,29 +65,37 @@ options["connect_args"] = {"sslmode": "require", "prepare_threshold": None}
 **causa**: el plan free son 100 cu-horas por proyecto y mes. con el mínimo de compute (0,25 cu) son ~400 h despiertas contra las ~730 h de un mes, así que cualquier cosa que toque la base con frecuencia mantiene el compute encendido y agota la cuota. aquí tocan la base: `/healthz` en cada sondeo del CI, el seed del arranque y el `pg_dump` semanal.
 **arreglo**: quitar lo que despierte la base sin necesidad y dejar que el scale-to-zero de neon (5 min) haga su trabajo; no hay keep-alive ni uptime check contra la base. el compute se reactiva al empezar el ciclo siguiente. mientras dure la suspensión no hay backup posible: ese hueco del histórico se pierde y hay que anotarlo (`docs/backups.md`). si el uso es diario y real, toca plan de pago.
 
-## 9. el dominio sigue `unverified` después del merge del PR
+## 9. el dominio `cosknot.duckdns.org` sigue `unverified` en render
 
-**síntoma**: el PR `is-a-dev/register#61033` está mergeado, el nombre ya resuelve por DNS, y el custom domain `cosknot.is-a.dev` (id `cdm-dbqtj9mi0phs738hnum0`) sigue en `unverified`; pulsar **Verify** no cambia el estado.
-**causa**: render clasifica `cosknot.is-a.dev` como `domainType: apex`, no como subdominio, porque is-a.dev está en la Public Suffix List y para el DNS público ese nombre es una raíz. para un apex render espera un registro **A** a `216.24.57.1`; el PR registra un **CNAME** a `cosknot.onrender.com`, que es lo que se pensó antes de ver cómo lo clasifica la API. que is-a.dev sirva el CNAME no cambia la clasificación del lado de render, así que la verificación no puede pasar.
-**arreglo**: cambiar el registro del PR a `A` → `216.24.57.1` (el json de is-a.dev admite A, CNAME, AAAA, TXT y MX). si el merge ya ocurrió, abrir un PR nuevo al registro con el A. esperar propagación y volver a verificar:
-
-```bash
-nslookup -type=A cosknot.is-a.dev 1.1.1.1
-```
-
-y **Settings → Custom Domains → Verify**, o el `POST .../custom-domains/cdm-dbqtj9mi0phs738hnum0/verify` de `docs/deployment.md` §5. el estado pasa a verificado cuando render ve el registro que espera.
-
-## 10. TLS no se emite en `cosknot.is-a.dev`
-
-**síntoma**: el DNS ya resuelve y `https://cosknot.is-a.dev` da error de certificado (nombre que no coincide, o ninguno emitido); `curl -sI https://cosknot.is-a.dev/healthz` no completa.
-**causa**: el certificado es el segundo paso y no empieza hasta que el primero termina. render pide el Let's Encrypt del dominio cuando el dominio está verificado; con el dominio en `unverified`, o con el registro apuntando a otro sitio, no hay emisión. no hay certificado que subir ni renovar a mano.
-**arreglo**: cerrar primero la verificación del dominio (entrada 9), y después esperar la emisión, de minutos a unas horas. comprobar con:
+**síntoma**: el custom domain `cosknot.duckdns.org` (id `cdm-dbqtuo6tlv9c739hqo4g`) figura en `unverified`, pulsar **Verify** no cambia el estado y `https://cosknot.duckdns.org` no carga.
+**causa**: el registro **A** de DuckDNS no apunta a `216.24.57.1`, o DuckDNS conserva una IP vieja de un `update ip` anterior. render clasifica `cosknot.duckdns.org` como `domainType: apex` porque `duckdns.org` está en la Public Suffix List, así que espera un A; un CNAME no es posible en DuckDNS y tampoco serviría para un apex. si el A es correcto y el estado no cambia, el resolver que usa render aún tiene el valor anterior en caché (TTL corto, 60 s).
+**arreglo**: comprobar a quién apunta el nombre, saltándose la caché local:
 
 ```bash
-curl -sI https://cosknot.is-a.dev/healthz
+nslookup cosknot.duckdns.org 1.1.1.1
 ```
 
-200 y certificado válido. mientras tanto `https://cosknot.onrender.com` sigue siendo la URL de producción y la que usan el workflow y los chequeos.
+si no devuelve `216.24.57.1`, corregirlo en https://www.duckdns.org → dominio `cosknot` → campo `current ip` → `216.24.57.1` → `update ip`, o por API:
+
+```bash
+curl "https://www.duckdns.org/update?domains=cosknot&token=$DUCKDNS_TOKEN&ip=216.24.57.1"
+```
+
+esperar un minuto y volver a verificar: **Settings → Custom Domains → Verify**, o el `POST .../custom-domains/cdm-dbqtuo6tlv9c739hqo4g/verify` de `docs/deployment.md` §5. el estado pasa a verificado cuando render ve el A correcto.
+
+## 10. TLS no se emite en `cosknot.duckdns.org`
+
+**síntoma**: el dominio ya figura `verified` y `https://cosknot.duckdns.org` da error de certificado (nombre que no coincide, o ninguno emitido); `curl -sI https://cosknot.duckdns.org/healthz` no completa.
+**causa**: el certificado es el segundo paso y no empieza hasta que el primero termina. render pide el Let's Encrypt del dominio cuando la verificación pasa, y la emisión tarda unos minutos. si pasan horas sin certificado, el dominio dejó de estar verificado: el A cambió, DuckDNS devolvió otra IP, o el custom domain se volvió a añadir. no hay certificado que subir ni renovar a mano.
+**arreglo**: confirmar que el dominio sigue `verified` en **Settings → Custom Domains** (o relanzar el `verify` de `docs/deployment.md` §5) y esperar la emisión. comprobar con:
+
+```bash
+curl -sI https://cosknot.duckdns.org/healthz
+```
+
+200 y certificado válido. mientras tanto `https://cosknot.onrender.com` sigue sirviendo la app y es la URL que usan el workflow y los chequeos.
+
+nota: `cosknot.is-a.dev` queda solo como reserva; su PR sigue abierto y hoy no se usa.
 
 ## 11. `502 Bad Gateway` justo después del deploy
 

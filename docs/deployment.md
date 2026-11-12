@@ -11,8 +11,8 @@ lo que hay desplegado hoy, cómo se llegó ahí y cómo se repite. los pasos son
 | runtime | Python 3.13.17 |
 | base de datos | Neon, proyecto `cosknot`, Postgres 18, AWS `eu-central-1` (Frankfurt), base `cosknot`, usuario `cosknot_owner` |
 | datos | `creators` 10 filas, `works` 24; la app siembra sola al arrancar si `creators` está vacía |
-| dominio | `cosknot.onrender.com` activo; `cosknot.is-a.dev` añadido como custom domain (id `cdm-dbqtj9mi0phs738hnum0`) en estado `unverified` |
-| TLS | Render emite y renueva el certificado Let's Encrypt del subdominio. `cosknot.is-a.dev` no tiene TLS hasta que el CNAME resuelva |
+| dominio | `cosknot.duckdns.org` activo: custom domain en Render (id `cdm-dbqtuo6tlv9c739hqo4g`) en estado `verified`. DuckDNS, gratis, con un registro **A** a `216.24.57.1` |
+| TLS | Render emite y renueva el certificado Let's Encrypt de `cosknot.duckdns.org`; la emisión arranca cuando el dominio verifica |
 | coste | 0 €/mes (Render free + Neon free, sin tarjeta) |
 | cold start | Render duerme el servicio a los 15 min sin tráfico; la primera petición después tarda ~50 s |
 | health check | `/healthz` (configurado en Render como health check path) |
@@ -74,9 +74,9 @@ al crear el servicio, Render hace el build (`pip install -r requirements.txt`: f
 
 los tres secretos (`RENDER_API_KEY`, `RENDER_SERVICE_ID`, `NEON_DATABASE_URL`) y cómo se generan están en `docs/backups.md`. `RENDER_SERVICE_ID` es `srv-dbqte8bl550s73er4bcg`.
 
-### 2.6 dominio (después del merge)
+### 2.6 dominio
 
-ver sección 5. El bloque `domains:` de `render.yaml` sigue comentado a propósito: si el blueprint se aplicara con el CNAME sin resolver, la verificación del dominio falla el deploy.
+ver sección 5. El bloque `domains:` de `render.yaml` sigue comentado a propósito: `render.yaml` no es la fuente de verdad del servicio, y el dominio ya está añadido y verificado desde el panel. Si se aplicara el blueprint con el registro sin resolver, la verificación falla el deploy.
 
 ## 3. desplegar cambios
 
@@ -142,51 +142,52 @@ el build es corto (seis paquetes, `psycopg[binary]` viene en wheel), pero no hay
 
 4. si Render marca el deploy como fallido en el health check pero el log dice `Listening at: http://0.0.0.0:10000`, el problema es el `SELECT 1` contra Neon, no gunicorn.
 
-## 5. cerrar el dominio cuando mergeen el PR
+## 5. dominio: `cosknot.duckdns.org`
 
-estado: el custom domain `cosknot.is-a.dev` ya está añadido en Render (id `cdm-dbqtj9mi0phs738hnum0`) y figura como `unverified`. El PR `is-a.dev/register#61033` está abierto. Mientras no se mergee, no hay registro DNS que resolver y la verificación no puede pasar.
+estado: el dominio real es `cosknot.duckdns.org`, gratis, por DuckDNS. El custom domain ya está añadido en Render (id `cdm-dbqtuo6tlv9c739hqo4g`) y figura como `verified`; el certificado lo emite Render solo. `https://cosknot.onrender.com` sigue funcionando y sigue siendo la URL que usan los workflows de CI.
 
-1. **fork del registro**: fork de `https://github.com/is-a-dev/register` en la cuenta `Barbarno`. El fichero va en `domains/cosknot.json` del fork, y su contenido es el de `domains/cosknot.json` de este repo:
+por qué no hay CNAME: DuckDNS solo permite un registro **A** por nombre, y es además lo que Render espera, porque clasifica `cosknot.duckdns.org` como `domainType: apex` (`duckdns.org` está en la Public Suffix List, así que para el DNS público el nombre es una raíz). Un apex se resuelve con **A** a `216.24.57.1`, que es el ingress de Render. No hay CNAME en ningún punto de la cadena.
 
-   ```json
-   {
-     "owner": { "username": "Barbarno", "email": "EMAIL_DEL_OWNER" },
-     "records": { "CNAME": "cosknot.onrender.com" }
-   }
-   ```
+cómo se mantiene:
 
-   el `username` es el de GitHub, no el nombre del proyecto. El `CNAME` va sin `https://` y sin barra final. El email es el de la cuenta con la que se firmó en is-a.dev.
-
-2. **esperar el merge** del PR `#61033`. Lo revisa una persona; hasta que entra en `main` del registro, el DNS no existe.
-
-3. **confirmar el DNS**:
+1. **cambiar la IP en DuckDNS** si cambia el ingress de Render. Por panel: https://www.duckdns.org → sesión → dominio `cosknot` → campo `current ip` → `216.24.57.1` → `update ip`. Por API, sin abrir el panel:
 
    ```bash
-   nslookup cosknot.is-a.dev
+   curl "https://www.duckdns.org/update?domains=cosknot&token=$DUCKDNS_TOKEN&ip=216.24.57.1"
    ```
 
-   debe devolver un CNAME hacia `cosknot.onrender.com`. Si el resolver local cachea el fallo anterior, probar con `nslookup cosknot.is-a.dev 1.1.1.1`.
+   responde `OK`. El token es el de la cuenta de DuckDNS y no va en el repo.
 
-4. **verificar el dominio en Render**, cuando el DNS ya resuelve. Por panel: servicio → **Settings** → **Custom Domains** → `cosknot.is-a.dev` → **Verify**. Por API:
+2. **confirmar el registro A**:
+
+   ```bash
+   nslookup cosknot.duckdns.org 1.1.1.1
+   ```
+
+   debe devolver `216.24.57.1`. DuckDNS propaga rápido, pero el resolver local puede cachear el valor viejo: por eso se consulta contra `1.1.1.1`.
+
+3. **verificar en Render**, si el dominio se vuelve a añadir o queda en `unverified`. Por panel: servicio → **Settings** → **Custom Domains** → `cosknot.duckdns.org` → **Verify**. Por API:
 
    ```bash
    curl --fail --silent --show-error \
      -X POST \
      -H "Authorization: Bearer $RENDER_API_KEY" \
-     https://api.render.com/v1/services/srv-dbqte8bl550s73er4bcg/custom-domains/cdm-dbqtj9mi0phs738hnum0/verify
+     https://api.render.com/v1/services/srv-dbqte8bl550s73er4bcg/custom-domains/cdm-dbqtuo6tlv9c739hqo4g/verify
    ```
 
-   el estado pasa de `unverified` a verificado cuando Render ve el CNAME.
+   el estado pasa de `unverified` a verificado cuando Render ve el A.
 
-5. **TLS**: lo emite Render solo, con Let's Encrypt, en cuanto la verificación pasa. No hay certificado que subir ni renovar a mano. Puede tardar de minutos a unas horas; hasta entonces el navegador da error de certificado aunque el DNS ya esté bien. Se comprueba con:
+4. **TLS**: lo emite Render solo, con Let's Encrypt, en cuanto la verificación pasa. No hay certificado que subir ni renovar a mano. Suele tardar minutos; hasta entonces el navegador da error de certificado aunque el DNS ya esté bien. Se comprueba con:
 
    ```bash
-   curl -sI https://cosknot.is-a.dev/healthz
+   curl -sI https://cosknot.duckdns.org/healthz
    ```
 
-   `200` y certificado válido. Mientras el dominio no esté cerrado, `https://cosknot.onrender.com` sigue siendo la URL de producción y la que usan el workflow y los chequeos.
+   `200` y certificado válido.
 
-6. opcional: cuando el dominio verifique, descomentar el bloque `domains:` de `render.yaml` para que el repo lo refleje. No es necesario para que funcione; el dominio ya está añadido en el panel.
+5. `sitemap.xml` y `robots.txt` no requieren cambios: se generan desde `request.url_root`, así que sirven el dominio por el que entra la petición.
+
+reserva: `cosknot.is-a.dev` queda como opción gratuita a largo plazo. El PR `is-a-dev/register#61033` sigue abierto, pero is-a.dev exige que el sitio sea de desarrollo de software y prohíbe el uso comercial, y Cosknot es un directorio de cosplay, así que lo probable es que se deniegue. El fichero del PR se queda en `domains/cosknot.json`; si algún día se mergea, el cambio en Render es el mismo procedimiento del punto 3 con el id del dominio nuevo.
 
 ## 6. si algo se rompe
 
