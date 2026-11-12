@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}buscar: {{ consulta }} - cosknot{% endblock %}
+{% block description %}resultados de búsqueda en cosknot.{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <h1>resultados para «{{ consulta }}»</h1>
+  <p>
+    {% if consulta %}
+      {{ creadores|length }} creadores y {{ obras|length }} piezas encontradas.
+    {% else %}
+      escribe algo en el buscador para encontrar ropa, props, pelucas o accesorios.
+    {% endif %}
+  </p>
+</section>
+
+{% if obras %}
+<section class="section" aria-labelledby="obras-buscadas">
+  <div class="section-head">
+    <h2 id="obras-buscadas">piezas</h2>
+  </div>
+  <div class="product-grid">
+    {% for work in obras %}
+      <a class="product-card" href="{{ url_for('work_detail', slug=work.slug) }}">
+        <div class="product-img accent-{{ work.creator.accent }}">
+          <span class="thumb-initials">{{ work.title[:1] }}</span>
+        </div>
+        <h3 class="product-title">{{ work.title }}</h3>
+        <p class="product-shop">por {{ work.creator.name }}</p>
+        <p class="product-price">{{ work.price_note or "a consultar" }}</p>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if creadores %}
+<section class="section" aria-labelledby="creadores-buscados">
+  <div class="section-head">
+    <h2 id="creadores-buscados">creadores</h2>
+  </div>
+  <div class="shop-grid">
+    {% for creator in creadores %}
+      <a class="shop-card" href="{{ url_for('creator_detail', slug=creator.slug) }}">
+        <span class="shop-avatar accent-{{ creator.accent }}">{{ creator.name[:1] }}{{ creator.name.split(' ')[-1][:1] }}</span>
+        <div>
+          <h3>{{ creator.name }}</h3>
+          <p>{{ creator.specialty }} · {{ creator.location }}</p>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if consulta and not obras and not creadores %}
+  <p class="empty-state">
+    nada con ese nombre. prueba con «ropa», «props», «pelucas» o el nombre de un personaje.
+  </p>
+{% endif %}
+{% endblock %}

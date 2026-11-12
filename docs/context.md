@@ -35,6 +35,16 @@ dominio, HTTPS y despliegue automático desde GitHub.
   de la base de datos cada semana.
 - Coste actual: 0 € al mes, sin tarjeta.
 
+Las rutas públicas son `/`, `/creadores`, `/creadores/<slug>`, `/obras/<slug>`,
+`/nosotros` y `/buscar?q=`, más `robots.txt`, `sitemap.xml` y `healthz`. El buscador
+resuelve la consulta contra el catálogo y muestra piezas y creadores en la misma
+página.
+
+La web se ve como un marketplace grande: cabecera fija con el buscador en el centro,
+barra de categorías justo debajo, tarjetas de producto cuadradas, listado con filtros
+en la barra lateral y ficha de obra a dos columnas. Es una decisión de enfoque, no un
+tema aparte: quien entra tiene que poder buscar, filtrar y abrir una ficha sin pensar.
+
 ## stack
 
 Python 3.13, Flask, Jinja, SQLAlchemy, SQLite en local, PostgreSQL en producción,

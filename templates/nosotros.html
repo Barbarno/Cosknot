@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}quiénes somos - cosknot{% endblock %}
+{% block description %}el equipo detrás de cosknot, el marketplace de cosplay hecho a mano.{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <h1>quiénes somos</h1>
+  <p>
+    cosknot lo llevamos tres estudiantes de 2º de SMR. la idea salió de un problema
+    propio: encontrar una pieza de cosplay que quede bien y llegue a tiempo es un lío,
+    y los talleres pequeños no tienen escaparate. esto es lo que hemos montado.
+  </p>
+</section>
+
+<section class="section" aria-labelledby="equipo-titulo">
+  <div class="section-head">
+    <h2 id="equipo-titulo">el equipo</h2>
+  </div>
+  <div class="team-grid">
+    {% for persona in equipo %}
+      <article class="team-card">
+        <div class="team-avatar accent-{{ persona.accent }}" aria-hidden="true">{{ persona.iniciales }}</div>
+        <p class="team-role">{{ persona.rol }}</p>
+        <h2>{{ persona.nombre }}</h2>
+        <p>{{ persona.que_hace }}</p>
+        <p>{{ persona.extra }}</p>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="section" aria-labelledby="modelo-titulo">
+  <div class="section-head">
+    <h2 id="modelo-titulo">cómo funciona el marketplace</h2>
+  </div>
+  <ol class="steps">
+    <li>
+      <span class="step-number">01</span>
+      <h3>el taller publica</h3>
+      <p>cada creador que entra pasa una revisión nuestra. cuando está verificado, publica sus piezas con precio y estado.</p>
+    </li>
+    <li>
+      <span class="step-number">02</span>
+      <h3>tú eliges</h3>
+      <p>buscas por especialidad o por personaje, miras la ficha y decides si compras lo que ya está hecho o pides algo a medida.</p>
+    </li>
+    <li>
+      <span class="step-number">03</span>
+      <h3>hablamos nosotros</h3>
+      <p>el trato se cierra por correo con el taller. cosknot pone el escaparate, el filtro y el contacto, y no cobra comisión todavía.</p>
+    </li>
+  </ol>
+</section>
+
+<section class="section" aria-labelledby="contacto-titulo">
+  <div class="section-head">
+    <h2 id="contacto-titulo">hablar con nosotros</h2>
+  </div>
+  <p>
+    para vender, para una colaboración o para decirnos que algo no funciona:
+    <a href="mailto:hola@cosknot.example">hola@cosknot.example</a>.
+    contestamos entre clases.
+  </p>
+  <div class="hero-actions">
+    <a class="button button-primary" href="mailto:hola@cosknot.example?subject=quiero%20vender%20en%20cosknot">quiero vender</a>
+    <a class="button button-ghost" href="{{ url_for('creators') }}">ver creadores</a>
+  </div>
+</section>
+{% endblock %}

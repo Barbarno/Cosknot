@@ -73,6 +73,18 @@ alguna vez hace falta borrar, se hace desde el ORM o se añade `ondelete="CASCAD
 - No hay validación del correo: cualquier cadena de hasta 200 caracteres se acepta y
   se publica tal cual en el `mailto:`.
 
+## búsqueda
+
+`/buscar?q=` no usa índices dedicados ni tabla aparte. Es un `ILIKE` con el patrón
+`%texto%` sobre `creators.name`, `creators.bio`, `creators.location` y
+`creators.specialty`, y lo mismo sobre `works.title` y `works.description`. Luego la
+plantilla pinta los dos bloques de resultados. En SQLite el `ILIKE` acaba en un `LIKE`,
+que solo ignora mayúsculas en ASCII.
+
+Con el catálogo actual, unas pocas decenas de filas, sobra: recorrer la tabla entera es
+más rápido que mantener un índice de texto. Si el catálogo creciera de golpe, tocaría
+mirar `pg_trgm` o el índice de texto completo de PostgreSQL.
+
 ## lo que falta para producción
 
 - Usuarios y login: hoy no hay. Cualquiera con acceso a la base de datos puede editar

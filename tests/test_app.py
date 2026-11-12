@@ -59,9 +59,35 @@ def test_la_portada_carga(cliente):
     respuesta = cliente.get("/")
     assert respuesta.status_code == 200
     cuerpo = respuesta.get_data(as_text=True)
-    assert "descubrir creadores" in cuerpo
+    assert "compra por categoría" in cuerpo
     assert "cómo funciona" in cuerpo
     assert "/creadores" in cuerpo
+    assert 'class="search"' in cuerpo
+
+
+def test_la_pagina_del_equipo_nombra_a_los_tres(cliente):
+    respuesta = cliente.get("/nosotros")
+    assert respuesta.status_code == 200
+    cuerpo = respuesta.get_data(as_text=True)
+    for nombre in ("Daniel Barrasa", "Jesús Larrazabal", "Daniel Torres"):
+        assert nombre in cuerpo
+    assert "CEO y CMO" in cuerpo
+    assert "CTO" in cuerpo
+    assert "CFO" in cuerpo
+
+
+def test_el_buscador_encuentra_por_especialidad(cliente):
+    respuesta = cliente.get("/buscar?q=pelucas")
+    assert respuesta.status_code == 200
+    cuerpo = respuesta.get_data(as_text=True)
+    assert "resultados para" in cuerpo
+    assert "pelucas" in cuerpo
+
+
+def test_el_buscador_sin_resultados_avisa(cliente):
+    respuesta = cliente.get("/buscar?q=zzzznoexiste")
+    assert respuesta.status_code == 200
+    assert "nada con ese nombre" in respuesta.get_data(as_text=True)
 
 
 def test_el_listado_muestra_los_creadores_del_seed(cliente):

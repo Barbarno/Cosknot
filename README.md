@@ -22,6 +22,9 @@ dentro de la web todavía no: el cobro y la comisión llegan más adelante.
 - ficha de cada creador con su biografía y sus obras
 - ficha de cada obra con precio orientativo, estado y botón de contacto
 - contacto directo por correo con el creador para comprar o pedir un encargo
+- buscador en `/buscar?q=` que mira en el nombre, la bio, la ciudad y la especialidad
+  del creador, y en el título y la descripción de las obras
+- página de equipo en `/nosotros`, con quién hace qué y cómo funciona el marketplace
 - despliegue en Render con base de datos en Neon, dominio propio y HTTPS
 - página 404 propia
 - `robots.txt` y `sitemap.xml` generados desde las rutas
@@ -30,6 +33,11 @@ dentro de la web todavía no: el cobro y la comisión llegan más adelante.
 El filtro sale de las cuatro especialidades del catálogo: ropa, props, pelucas y
 accesorios. Los creadores que aparecen en la web están verificados: son los que han
 pasado por el equipo antes de publicar.
+
+El diseño sigue el patrón de los marketplaces grandes: buscador en la cabecera, barra
+de categorías debajo, rejilla de tarjetas cuadradas para las piezas, listado con los
+filtros en la barra lateral y ficha de obra a dos columnas. La idea es que la web se
+lea como una tienda y no como una página de presentación.
 
 ## arrancarlo en local
 

@@ -5,6 +5,8 @@
 
 {% block content %}
 <nav class="breadcrumb" aria-label="ruta de navegación">
+  <a href="{{ url_for('index') }}">inicio</a>
+  <span aria-hidden="true">/</span>
   <a href="{{ url_for('creators') }}">creadores</a>
   <span aria-hidden="true">/</span>
   <a href="{{ url_for('creator_detail', slug=creator.slug) }}">{{ creator.name }}</a>
@@ -25,35 +27,34 @@
       {% if creator.verified %}· verificado{% endif %} · {{ creator.location }}
     </p>
 
-    <p class="work-description">{{ work.description }}</p>
+    <p class="price-line">{{ work.price_note or "precio a consultar" }}</p>
 
     <dl class="detail-list">
       <div>
-        <dt>precio</dt>
-        <dd>{{ work.price_note or "a consultar con el creador" }}</dd>
+        <dt>especialidad</dt>
+        <dd>{{ creator.specialty }}</dd>
       </div>
       <div>
         <dt>estado</dt>
         <dd>{{ work.status }}</dd>
       </div>
       <div>
-        <dt>especialidad</dt>
-        <dd>{{ creator.specialty }}</dd>
+        <dt>taller</dt>
+        <dd>{{ creator.name }}</dd>
       </div>
     </dl>
 
-    <p class="meta">
-      {% if work.status == "disponible" %}
-        esta pieza está hecha y se envía tal cual. si la quieres a tu medida, también se puede encargar.
-      {% else %}
-        esta pieza se hace por encargo: se toma medidas, se elige material y se entrega en el plazo que acordéis.
-      {% endif %}
-    </p>
-
     <div class="work-actions">
-      <a class="button button-primary" href="mailto:{{ creator.contact_email }}?subject={{ ("comprar o encargar: " ~ work.title)|urlencode }}">comprar o encargar</a>
+      <a class="button button-primary" href="mailto:{{ creator.contact_email }}?subject={{ ("compra o encargo: " ~ work.title)|urlencode }}">comprar o encargar</a>
       <a class="button button-ghost" href="{{ url_for('creator_detail', slug=creator.slug) }}">ver perfil del creador</a>
     </div>
+
+    <p class="work-description">{{ work.description }}</p>
+
+    <p class="profile-note">
+      el trato se cierra por correo con el taller. cosknot no cobra nada en esta versión:
+      pone el escaparate y el contacto.
+    </p>
   </div>
 </article>
 {% endblock %}

@@ -5,55 +5,59 @@
 
 {% block content %}
 <section class="page-head">
-  <p class="eyebrow">marketplace de cosplay</p>
   <h1>creadores</h1>
-  <p class="lede">
-    {{ creators|length }} personas publican aquí ropa, props, pelucas y accesorios de cosplay.
-    filtra por especialidad, mira su trabajo y escribe a quien te interese para comprar
+  <p>
+    {{ creators|length }} talleres publican aquí ropa, props, pelucas y accesorios.
+    filtra por especialidad, mira su trabajo y escribe al que te interese para comprar
     una pieza o encargar la tuya.
   </p>
 </section>
 
 {% if creators %}
-<section class="section" aria-labelledby="listado-titulo">
-  <div class="section-head">
-    <h2 id="listado-titulo">creadores publicados</h2>
-  </div>
+<div class="listing">
+  <aside class="sidebar" aria-labelledby="filtro-titulo">
+    <h2 id="filtro-titulo">especialidad</h2>
+    <div class="filter-bar" data-filter-bar data-selected="{{ selected }}">
+      <div class="filter-buttons" role="group" aria-labelledby="filtro-titulo">
+        <button type="button" class="chip{% if selected == "todas" %} is-active{% endif %}" data-filter="todas" aria-pressed="{% if selected == "todas" %}true{% else %}false{% endif %}">todas</button>
+        {% for specialty in specialties %}
+          <button type="button" class="chip{% if specialty == selected %} is-active{% endif %}" data-filter="{{ specialty }}" aria-pressed="{% if specialty == selected %}true{% else %}false{% endif %}">{{ specialty }}</button>
+        {% endfor %}
+      </div>
+      <p class="filter-status" data-filter-status role="status" aria-live="polite"></p>
+    </div>
+  </aside>
 
-  <div class="filter-bar" data-filter-bar data-selected="{{ selected }}">
-    <span class="filter-label" id="filtro-etiqueta">especialidad</span>
-    <div class="filter-buttons" role="group" aria-labelledby="filtro-etiqueta">
-      <button type="button" class="chip{% if selected == "todas" %} is-active{% endif %}" data-filter="todas" aria-pressed="{% if selected == "todas" %}true{% else %}false{% endif %}">todas</button>
-      {% for specialty in specialties %}
-        <button type="button" class="chip{% if specialty == selected %} is-active{% endif %}" data-filter="{{ specialty }}" aria-pressed="{% if specialty == selected %}true{% else %}false{% endif %}">{{ specialty }}</button>
+  <section aria-label="listado de creadores">
+    <div class="toolbar">
+      <p class="toolbar-count">{{ creators|length }} creadores publicados</p>
+      <span>ordenados por nombre</span>
+    </div>
+
+    <div class="grid creator-grid" data-creator-grid>
+      {% for creator in creators %}
+        <article class="card creator-card" data-specialty="{{ creator.specialty }}">
+          <a class="card-link" href="{{ url_for('creator_detail', slug=creator.slug) }}">
+            <div class="thumb accent-{{ creator.accent }}" aria-hidden="true">
+              <span class="thumb-initials">{{ creator.name[:1] }}{{ creator.name.split(' ')[-1][:1] }}</span>
+            </div>
+            <div class="card-body">
+              <p class="tag">{{ creator.specialty }}{% if creator.verified %} · verificado{% endif %}</p>
+              <h3>{{ creator.name }}</h3>
+              <p class="meta">{{ creator.location }}</p>
+              <p class="card-bio">{{ creator.bio[:110] }}…</p>
+              <p class="card-count">{{ creator.works|length }} obras publicadas</p>
+            </div>
+          </a>
+        </article>
       {% endfor %}
     </div>
-    <p class="filter-status" data-filter-status role="status" aria-live="polite"></p>
-  </div>
 
-  <div class="grid creator-grid" data-creator-grid>
-    {% for creator in creators %}
-      <article class="card creator-card" data-specialty="{{ creator.specialty }}">
-        <a class="card-link" href="{{ url_for('creator_detail', slug=creator.slug) }}">
-          <div class="thumb accent-{{ creator.accent }}" aria-hidden="true">
-            <span class="thumb-initials">{{ creator.name[:1] }}{{ creator.name.split(' ')[-1][:1] }}</span>
-          </div>
-          <div class="card-body">
-            <p class="tag">{{ creator.specialty }}{% if creator.verified %} · verificado{% endif %}</p>
-            <h3>{{ creator.name }}</h3>
-            <p class="meta">{{ creator.location }}</p>
-            <p class="card-bio">{{ creator.bio[:110] }}…</p>
-            <p class="card-count">{{ creator.works|length }} obras publicadas · acepta encargos</p>
-          </div>
-        </a>
-      </article>
-    {% endfor %}
-  </div>
-
-  <p class="empty-state" data-empty-state hidden>
-    no hay creadores en esta especialidad todavía. prueba con otra categoría.
-  </p>
-</section>
+    <p class="empty-state" data-empty-state hidden>
+      no hay creadores en esta especialidad todavía. prueba con otra categoría.
+    </p>
+  </section>
+</div>
 {% else %}
   <p class="empty-state">
     todavía no hay creadores publicados. si tú haces cosplay, escríbenos y te damos de alta.

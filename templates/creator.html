@@ -5,10 +5,14 @@
 
 {% block content %}
 <nav class="breadcrumb" aria-label="ruta de navegación">
+  <a href="{{ url_for('index') }}">inicio</a>
+  <span aria-hidden="true">/</span>
   <a href="{{ url_for('creators') }}">creadores</a>
   <span aria-hidden="true">/</span>
   <span>{{ creator.name }}</span>
 </nav>
+
+<div class="shop-banner" aria-hidden="true"></div>
 
 <header class="profile-head">
   <div class="profile-art accent-{{ creator.accent }}" aria-hidden="true">
@@ -17,36 +21,37 @@
   <div class="profile-info">
     <p class="tag">{{ creator.specialty }}{% if creator.verified %} · verificado{% endif %}</p>
     <h1>{{ creator.name }}</h1>
-    <p class="meta">{{ creator.location }} · {{ works|length }} obras publicadas</p>
+    <p class="meta">{{ creator.location }} · {{ works|length }} piezas publicadas</p>
     <p class="bio">{{ creator.bio }}</p>
     <div class="profile-actions">
       <a class="button button-primary" href="mailto:{{ creator.contact_email }}?subject={{ ("encargo de cosplay: " ~ creator.name)|urlencode }}">escribir a {{ creator.name.split(' ')[0] | lower }}</a>
       <a class="button button-ghost" href="{{ url_for('creators') }}">ver más creadores</a>
     </div>
-    <p class="meta">acepta encargos: le escribes, acordáis medidas y plazo, y la pieza se hace para ti.</p>
+    <p class="profile-note">acepta encargos: le escribes, acordáis medidas y plazo, y la pieza se hace para ti.</p>
   </div>
 </header>
 
+<div class="tabs" aria-hidden="true">
+  <span class="is-active">piezas</span>
+  <span>encargos</span>
+  <span>opiniones</span>
+</div>
+
 <section class="section" aria-labelledby="obras-titulo">
   <div class="section-head">
-    <h2 id="obras-titulo">obras de {{ creator.name.split(' ')[0] | lower }}</h2>
+    <h2 id="obras-titulo">piezas de {{ creator.name.split(' ')[0] | lower }}</h2>
   </div>
   {% if works %}
-    <div class="grid work-grid">
+    <div class="product-grid">
       {% for work in works %}
-        <article class="card work-card">
-          <a class="card-link" href="{{ url_for('work_detail', slug=work.slug) }}">
-            <div class="thumb accent-{{ (creator.accent + loop.index) % 10 }}" aria-hidden="true">
-              <span class="thumb-initials">{{ creator.name[:1] }}{{ loop.index }}</span>
-            </div>
-            <div class="card-body">
-              <p class="tag">{{ work.status }}</p>
-              <h3>{{ work.title }}</h3>
-              <p class="card-bio">{{ work.description[:110] }}…</p>
-              <p class="card-count">{{ work.price_note or "precio a consultar" }}</p>
-            </div>
-          </a>
-        </article>
+        <a class="product-card" href="{{ url_for('work_detail', slug=work.slug) }}">
+          <div class="product-img accent-{{ (creator.accent + loop.index) % 10 }}">
+            <span class="thumb-initials">{{ work.title[:1] }}</span>
+          </div>
+          <h3 class="product-title">{{ work.title }}</h3>
+          <p class="product-shop">{{ work.status }}</p>
+          <p class="product-price">{{ work.price_note or "a consultar" }}</p>
+        </a>
       {% endfor %}
     </div>
   {% else %}

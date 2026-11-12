@@ -12,32 +12,76 @@
   <a class="skip-link" href="#contenido">saltar al contenido</a>
 
   <header class="site-header">
-    <div class="wrap header-inner">
-      <a class="brand" href="{{ url_for('index') }}">
+    <div class="wrap topbar">
+      <a class="brand" href="{{ url_for('index') }}" aria-label="cosknot, ir al inicio">
         <img class="brand-logo" src="{{ url_for('static', filename='img/logo.svg') }}" alt="cosknot" width="420" height="96">
       </a>
-      <nav class="site-nav" aria-label="navegación principal">
-        <a href="{{ url_for('creators') }}">creadores</a>
-        <a href="{{ url_for('index') }}#como-funciona">cómo funciona</a>
-        <a class="nav-cta" href="mailto:hola@cosknot.example?subject=quiero%20publicar%20mi%20trabajo%20en%20cosknot">publicar tu trabajo</a>
+
+      <form class="search" action="{{ url_for('buscar') }}" method="get" role="search">
+        <label class="sr-only" for="q">buscar en cosknot</label>
+        <input id="q" type="search" name="q" value="{{ request.args.get('q', '') }}"
+               placeholder="busca ropa, props, pelucas, personajes..." autocomplete="off">
+        <button type="submit" aria-label="buscar">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="m16.2 16.2 4.3 4.3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+        </button>
+      </form>
+
+      <nav class="topnav" aria-label="cuenta y publicación">
+        <a href="{{ url_for('nosotros') }}">nosotros</a>
+        <a class="nav-cta" href="mailto:hola@cosknot.example?subject=quiero%20vender%20en%20cosknot">vender</a>
+      </nav>
+    </div>
+
+    <div class="wrap catnav-wrap">
+      <nav class="catnav" aria-label="categorías">
+        <a href="{{ url_for('creators') }}">todo</a>
+        <a href="{{ url_for('creators') }}?especialidad=ropa">ropa</a>
+        <a href="{{ url_for('creators') }}?especialidad=props">props</a>
+        <a href="{{ url_for('creators') }}?especialidad=pelucas">pelucas</a>
+        <a href="{{ url_for('creators') }}?especialidad=accesorios">accesorios</a>
+        <a href="{{ url_for('index') }}#como-funciona">encargos</a>
+        <a href="{{ url_for('nosotros') }}">quiénes somos</a>
       </nav>
     </div>
   </header>
 
-  <main id="contenido" class="wrap">
+  <main id="contenido">
     {% block content %}{% endblock %}
   </main>
 
   <footer class="site-footer">
-    <div class="wrap footer-inner">
-      <div>
-        <p class="footer-brand"><img class="footer-logo" src="{{ url_for('static', filename='img/logo.svg') }}" alt="cosknot" width="420" height="96"></p>
-        <p class="footer-note">marketplace de cosplay hecho a mano. compra una pieza o encárgala. <span aria-hidden="true">·</span> {{ current_year }}</p>
+    <div class="wrap footer-cols">
+      <div class="footer-col">
+        <h2>comprar</h2>
+        <a href="{{ url_for('creators') }}">todas las piezas</a>
+        <a href="{{ url_for('creators') }}?especialidad=ropa">ropa</a>
+        <a href="{{ url_for('creators') }}?especialidad=props">props</a>
+        <a href="{{ url_for('creators') }}?especialidad=pelucas">pelucas</a>
+        <a href="{{ url_for('creators') }}?especialidad=accesorios">accesorios</a>
       </div>
-      <nav class="footer-nav" aria-label="enlaces del pie">
-        <a href="{{ url_for('creators') }}">creadores</a>
+      <div class="footer-col">
+        <h2>vender</h2>
+        <a href="mailto:hola@cosknot.example?subject=quiero%20vender%20en%20cosknot">publicar tu trabajo</a>
         <a href="{{ url_for('index') }}#como-funciona">cómo funciona</a>
-        <a href="mailto:hola@cosknot.example?subject=quiero%20publicar%20mi%20trabajo%20en%20cosknot">publicar tu trabajo</a>
+        <a href="{{ url_for('nosotros') }}">el equipo</a>
+      </div>
+      <div class="footer-col">
+        <h2>cosknot</h2>
+        <a href="{{ url_for('nosotros') }}">quiénes somos</a>
+        <a href="{{ url_for('index') }}">inicio</a>
+        <a href="mailto:hola@cosknot.example">hola@cosknot.example</a>
+      </div>
+      <div class="footer-col footer-brand-col">
+        <img class="footer-logo" src="{{ url_for('static', filename='img/logo.svg') }}" alt="cosknot" width="420" height="96">
+        <p class="footer-note">marketplace de cosplay hecho a mano. compra una pieza o encárgala a quien la hace.</p>
+      </div>
+    </div>
+    <div class="wrap footer-bottom">
+      <p>© {{ current_year }} cosknot · hecho en españa</p>
+      <nav aria-label="enlaces legales">
+        <a href="{{ url_for('nosotros') }}">equipo</a>
+        <a href="mailto:hola@cosknot.example?subject=aviso%20legal">aviso legal</a>
+        <a href="mailto:hola@cosknot.example?subject=privacidad">privacidad</a>
       </nav>
     </div>
   </footer>

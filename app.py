@@ -18,6 +18,44 @@ from seed import SPECIALTIES, seed_database
 
 DEFAULT_DATABASE_URL = "sqlite:///cosknot.db"
 
+# El equipo que hay detrás de la web. Los creadores que venden son otra cosa:
+# son usuarios verificados, no nosotros.
+EQUIPO = [
+    {
+        "nombre": "Daniel Barrasa",
+        "iniciales": "DB",
+        "rol": "CEO y CMO",
+        "accent": 0,
+        "que_hace": (
+            "Lleva el rumbo del proyecto: qué se publica, cómo se cuenta y qué se "
+            "deja para más adelante. También escribe la documentación."
+        ),
+        "extra": "Contesta el correo de cosknot y revisa los talleres antes de darles de alta.",
+    },
+    {
+        "nombre": "Jesús Larrazabal",
+        "iniciales": "JL",
+        "rol": "CTO",
+        "accent": 1,
+        "que_hace": (
+            "Lleva el desarrollo: la web, la base de datos y el despliegue. Es quien "
+            "mira los errores del servidor y arregla lo que se rompe."
+        ),
+        "extra": "Montó la integración con la base de datos y el dominio.",
+    },
+    {
+        "nombre": "Daniel Torres",
+        "iniciales": "DT",
+        "rol": "CFO",
+        "accent": 2,
+        "que_hace": (
+            "Lleva las cuentas: lo que cuesta mantener la web y lo que habría que "
+            "cobrar de comisión cuando lleguen las ventas."
+        ),
+        "extra": "Controla el gasto de los servicios y los plazos.",
+    },
+]
+
 
 def normalize_database_url(url: str | None) -> str:
     if not url:
@@ -115,14 +153,18 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
 
     @app.context_processor
     def inject_globals() -> dict[str, Any]:
-        return {"specialties": SPECIALTIES, "current_year": 2026}
+        return {
+            "specialties": SPECIALTIES,
+            "current_year": 2026,
+            "equipo": EQUIPO,
+        }
 
     @app.route("/")
     def index() -> str:
         featured = g.db.scalars(
             select(Creator).order_by(Creator.id).limit(3)
         ).all()
-        works = g.db.scalars(select(Work).order_by(Work.id.desc()).limit(3)).all()
+        works = g.db.scalars(select(Work).order_by(Work.id.desc()).limit(8)).all()
         creator_count = g.db.scalar(select(func.count()).select_from(Creator)) or 0
         return render_template(
             "index.html",
@@ -138,6 +180,40 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
             selected = "todas"
         rows = g.db.scalars(select(Creator).order_by(Creator.name)).all()
         return render_template("creators.html", creators=rows, selected=selected)
+
+    @app.route("/nosotros")
+    def nosotros() -> str:
+        return render_template("nosotros.html")
+
+    @app.route("/buscar")
+    def buscar() -> str:
+        consulta = (request.args.get("q") or "").strip()
+        creadores: list[Creator] = []
+        obras: list[Work] = []
+        if consulta:
+            patron = f"%{consulta}%"
+            creadores = list(
+                g.db.scalars(
+                    select(Creator)
+                    .where(
+                        Creator.name.ilike(patron)
+                        | Creator.bio.ilike(patron)
+                        | Creator.location.ilike(patron)
+                        | Creator.specialty.ilike(patron)
+                    )
+                    .order_by(Creator.name)
+                ).all()
+            )
+            obras = list(
+                g.db.scalars(
+                    select(Work)
+                    .where(Work.title.ilike(patron) | Work.description.ilike(patron))
+                    .order_by(Work.id.desc())
+                ).all()
+            )
+        return render_template(
+            "buscar.html", consulta=consulta, creadores=creadores, obras=obras
+        )
 
     @app.route("/creadores/<slug>")
     def creator_detail(slug: str) -> str:
@@ -161,7 +237,7 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
 
     @app.route("/sitemap.xml")
     def sitemap() -> Response:
-        urls = [url_for("index"), url_for("creators")]
+        urls = [url_for("index"), url_for("creators"), url_for("nosotros")]
         urls += [url_for("creator_detail", slug=s.slug) for s in g.db.scalars(select(Creator)).all()]
         urls += [url_for("work_detail", slug=w.slug) for w in g.db.scalars(select(Work)).all()]
         entries = "".join(
