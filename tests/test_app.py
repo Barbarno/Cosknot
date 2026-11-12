@@ -143,3 +143,21 @@ def test_seed_is_idempotent(app):
 
     with factory() as session:
         assert session.scalar(select(func.count()).select_from(Creator)) == len(SEED_CREATORS)
+
+
+def test_robots_txt(client):
+    response = client.get("/robots.txt")
+    assert response.status_code == 200
+    body = response.get_data(as_text=True)
+    assert "User-agent: *" in body
+    assert "Sitemap: http" in body
+
+
+def test_sitemap_lists_creators_and_works(client):
+    response = client.get("/sitemap.xml")
+    assert response.status_code == 200
+    assert response.mimetype == "application/xml"
+    body = response.get_data(as_text=True)
+    assert "<urlset" in body
+    assert "/creadores/" in body
+    assert "/obras/" in body

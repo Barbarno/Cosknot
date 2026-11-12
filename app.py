@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from flask import Flask, g, render_template
+from flask import Flask, Response, g, render_template, request, url_for
 from sqlalchemy import create_engine, func, select, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
@@ -103,6 +103,27 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
         if work is None:
             return render_template("404.html"), 404
         return render_template("work.html", work=work, creator=work.creator)
+
+    @app.route("/robots.txt")
+    def robots() -> Response:
+        sitemap = url_for("sitemap", _external=True)
+        body = f"User-agent: *\nAllow: /\nSitemap: {sitemap}\n"
+        return Response(body, mimetype="text/plain")
+
+    @app.route("/sitemap.xml")
+    def sitemap() -> Response:
+        urls = [url_for("index"), url_for("creators")]
+        urls += [url_for("creator_detail", slug=s.slug) for s in g.db.scalars(select(Creator)).all()]
+        urls += [url_for("work_detail", slug=w.slug) for w in g.db.scalars(select(Work)).all()]
+        entries = "".join(
+            f"<url><loc>{request.url_root.rstrip('/')}{path}</loc></url>" for path in urls
+        )
+        body = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+            f"{entries}</urlset>"
+        )
+        return Response(body, mimetype="application/xml")
 
     @app.route("/healthz")
     def healthz() -> tuple[dict[str, str], int]:
