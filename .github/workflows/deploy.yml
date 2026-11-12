@@ -31,8 +31,17 @@ jobs:
             echo "faltan RENDER_API_KEY o RENDER_SERVICE_ID" >&2
             exit 1
           fi
+          # el POST dispara un despliegue pero responde 202 sin cuerpo: el id se
+          # busca después listando. Si autoDeploy ya lo había lanzado, este POST
+          # no crea otro y devuelve 400/429, que se ignoran a propósito.
+          curl --silent --show-error --max-time 30 -o /dev/null \
+            -X POST \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{}' \
+            "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" || true
           deploy_id=""
-          for i in $(seq 1 12); do
+          for i in $(seq 1 24); do
             deploy_id=$(curl --fail --silent --show-error --max-time 30 \
               -H "Authorization: Bearer $RENDER_API_KEY" \
               "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys?limit=5" \
