@@ -88,7 +88,7 @@ def test_la_ficha_del_creador_muestra_bio_y_obras(cliente, aplicacion):
 
 def test_la_obra_muestra_precio_estado_y_correo(cliente):
     creador = SEED_CREATORS[0]
-    obra = creador["works"][1]
+    obra = next(o for o in creador["works"] if o["price_note"])
     respuesta = cliente.get(f"/obras/{obra['slug']}")
     assert respuesta.status_code == 200
     cuerpo = respuesta.get_data(as_text=True)
