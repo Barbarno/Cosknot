@@ -1,57 +1,53 @@
-# contexto del proyecto cosknot
+# contexto del proyecto
 
-## propósito
+## de qué va
 
-cosknot es una aplicación web y una comunidad para personas que crean y disfrutan del cosplay y del trabajo hecho a mano relacionado con videojuegos series anime y otros mundos de ficción
+cosknot es una web para gente a la que le gusta el cosplay y el trabajo hecho a mano
+relacionado con videojuegos, series, anime y otros mundos de ficción. La idea es juntar
+en un sitio a quien hace la ropa, los props y los accesorios, y a quien los busca.
 
-etsy fue solo una referencia para la idea general de conectar creadores con personas interesadas en su trabajo
-cosknot no pretende ser un clon genérico de etsy
+Etsy me sirvió de referencia para entender la idea de conectar creadores con gente
+interesada, pero cosknot no quiere ser un clon. En esta primera versión solo hay
+descubrimiento y contacto.
 
 ## equipo
 
-- ceo y cmo: daniel barrasa
-- cto: jesus larrazabal
-- cfo: daniel torres
+- Daniel Barrasa: idea, documentación y GitHub.
+- Jesús Larrazabal: desarrollo y despliegue.
+- Daniel Torres: cuentas y costes.
 
-## estado actual
+## cómo está ahora
 
-la aplicación está desplegada en producción en `https://cosknot.duckdns.org`, con base de datos gestionada, dominio propio, tls y ci/cd
+La web está publicada en `https://cosknot.duckdns.org`, con base de datos gestionada,
+dominio, HTTPS y despliegue automático desde GitHub.
 
-- el servicio corre en render, plan free, región frankfurt, sobre gunicorn con 2 workers y 4 threads
-- la base de datos es postgresql 18 en neon, región aws eu-central-1 (frankfurt), usada con la cadena pooled
-- el certificado tls lo emite y renueva render; el dns es un subdominio gratuito de duckdns
-- github actions ejecuta las pruebas en cada push y pull request, dispara el despliegue y hace una copia semanal de la base de datos
-- coste actual: 0 €/mes, sin tarjeta asociada
+- El servicio corre en Render, plan free, región de Frankfurt, con gunicorn.
+- La base de datos es PostgreSQL 18 en Neon, también en Frankfurt.
+- El certificado HTTPS lo pone Render; el dominio es un subdominio gratuito de DuckDNS.
+- GitHub Actions pasa las pruebas en cada push, lanza el despliegue y hace una copia
+  de la base de datos cada semana.
+- Coste actual: 0 € al mes, sin tarjeta.
 
 ## stack
 
-- python 3.13
-- flask
-- jinja
-- sqlalchemy 2.1
-- postgresql (neon) en producción
-- sqlite en local
-- gunicorn
-- pytest
-- git y github
-- github actions
-- render
-- duckdns
+Python 3.13, Flask, Jinja, SQLAlchemy, SQLite en local, PostgreSQL en producción,
+gunicorn, pytest, Git, GitHub Actions, Render y DuckDNS.
 
-## arquitectura
+## cómo funciona por dentro
 
-el navegador resuelve el nombre contra el registro a de duckdns, que apunta a `216.24.57.1`, el ingress de render
-render termina el tls, sirve la aplicación con gunicorn y aplica el health check `/healthz`, que ejecuta `SELECT 1`
-la aplicación abre la conexión contra postgresql en neon por la cadena pooled, en la misma región
-en el plan free render duerme el servicio a los 15 min sin tráfico: la primera petición posterior tarda alrededor de 50 s por el cold start
+El navegador resuelve `cosknot.duckdns.org` contra el registro A de DuckDNS, que apunta
+a la IP de Render. Render termina el HTTPS, arranca la app con gunicorn y usa `/healthz`
+para saber si está viva; esa ruta hace un `SELECT 1` contra la base de datos.
 
-## convenciones
+En el plan free, Render duerme el servicio a los 15 minutos sin tráfico. La primera
+petición después tarda unos 50 segundos por el arranque, y no es un fallo.
 
-mantener una aplicación web responsive renderizada en servidor antes de añadir un framework de frontend
-la primera versión se centra en el descubrimiento de creadores, las páginas de producto y los listados de vendedores
-las pruebas con pytest tienen que pasar en local y en ci antes de tocar producción
-los secretos viven en las variables de entorno de render y en los secretos del repositorio, nunca en el código
+## normas que sigo
 
-## regla de actualización
+- Nada de framework de frontend: HTML renderizado en el servidor con Jinja.
+- La primera versión se centra en descubrir creadores y contactar, nada más.
+- Las pruebas tienen que pasar en local y en GitHub antes de tocar producción.
+- Los secretos van en las variables de entorno de Render y en los secretos del
+  repositorio, nunca en el código.
 
-mantener este archivo corto y actualizarlo cuando cambie la dirección del proyecto
+Este archivo se mantiene corto. Si cambia la dirección del proyecto, se actualiza.

@@ -112,7 +112,7 @@ a:hover {
   margin-inline: auto;
 }
 
-/* header */
+/* cabecera */
 
 .site-header {
   position: sticky;
@@ -171,7 +171,7 @@ a:hover {
   border-bottom-color: var(--color-terracotta);
 }
 
-/* type helpers */
+/* tipografía */
 
 .eyebrow {
   font-family: var(--font-ui);
@@ -208,7 +208,7 @@ a:hover {
   margin-bottom: var(--space-2);
 }
 
-/* buttons */
+/* botones */
 
 .button {
   display: inline-flex;
@@ -246,7 +246,7 @@ a:hover {
   color: var(--color-black);
 }
 
-/* hero */
+/* portada */
 
 .hero {
   display: grid;
@@ -299,7 +299,7 @@ a:hover {
   background: linear-gradient(210deg, #2f2a28 0%, #6f6764 60%, #ded6d2 100%);
 }
 
-/* sections */
+/* secciones */
 
 .section {
   padding-block: var(--space-5);
@@ -354,7 +354,7 @@ a:hover {
   font-size: 0.98rem;
 }
 
-/* grid + cards */
+/* rejilla y tarjetas */
 
 .grid {
   display: grid;
@@ -440,7 +440,7 @@ a:hover {
   backdrop-filter: blur(2px);
 }
 
-/* gradient placeholders */
+/* marcadores de color */
 
 .accent-0 { background: linear-gradient(155deg, #e9a488, #c9643f 60%, #7d3a27); }
 .accent-1 { background: linear-gradient(150deg, #f2c9b4, #d97757 55%, #8a4a30); }
@@ -453,7 +453,7 @@ a:hover {
 .accent-8 { background: linear-gradient(160deg, #f1d5c3, #cc7c58 55%, #6e3a28); }
 .accent-9 { background: linear-gradient(145deg, #dfae94, #b45f3f 60%, #46271e); }
 
-/* work list (home) */
+/* lista de obras (inicio) */
 
 .work-list {
   list-style: none;
@@ -490,7 +490,7 @@ a:hover {
   color: var(--color-muted);
 }
 
-/* page head + filter */
+/* cabecera de página y filtros */
 
 .page-head {
   padding-block: var(--space-5) var(--space-3);
@@ -565,7 +565,7 @@ a:hover {
   text-align: center;
 }
 
-/* breadcrumb */
+/* migas de pan */
 
 .breadcrumb {
   display: flex;
@@ -586,7 +586,7 @@ a:hover {
   border-bottom-color: currentColor;
 }
 
-/* profile */
+/* perfil */
 
 .profile-head {
   display: grid;
@@ -622,7 +622,7 @@ a:hover {
   margin-top: var(--space-4);
 }
 
-/* work detail */
+/* detalle de obra */
 
 .work-detail {
   display: grid;
@@ -685,7 +685,7 @@ a:hover {
   gap: var(--space-2);
 }
 
-/* 404 */
+/* página 404 */
 
 .not-found {
   padding-block: var(--space-6);
@@ -696,7 +696,7 @@ a:hover {
   margin-bottom: var(--space-3);
 }
 
-/* footer */
+/* pie de página */
 
 .site-footer {
   margin-top: var(--space-6);
@@ -725,7 +725,7 @@ a:hover {
   margin: 0;
 }
 
-/* responsive */
+/* móvil */
 
 @media (max-width: 860px) {
   .hero {

@@ -9,24 +9,24 @@ from seed import SEED_CREATORS
 
 
 @pytest.fixture()
-def app(tmp_path):
-    db_path = tmp_path / "test.db"
-    application = create_app(
+def aplicacion(tmp_path):
+    ruta_db = tmp_path / "test.db"
+    app = create_app(
         {
             "TESTING": True,
-            "DATABASE_URL": f"sqlite:///{db_path.as_posix()}",
-            "SECRET_KEY": "test-key",
+            "DATABASE_URL": f"sqlite:///{ruta_db.as_posix()}",
+            "SECRET_KEY": "clave-de-pruebas",
         }
     )
-    return application
+    return app
 
 
 @pytest.fixture()
-def client(app):
-    return app.test_client()
+def cliente(aplicacion):
+    return aplicacion.test_client()
 
 
-def test_normalize_database_url():
+def test_normaliza_la_url_de_la_base_de_datos():
     assert normalize_database_url(None) == "sqlite:///cosknot.db"
     assert normalize_database_url("") == "sqlite:///cosknot.db"
     assert normalize_database_url("sqlite:///x.db") == "sqlite:///x.db"
@@ -44,120 +44,121 @@ def test_normalize_database_url():
     )
 
 
-def test_engine_options_differ_by_backend():
-    sqlite_engine = build_engine("sqlite:///x.db")
-    assert sqlite_engine.dialect.name == "sqlite"
-    assert sqlite_engine.pool._pre_ping is False
-    assert "sslmode" not in (sqlite_engine.dialect.create_connect_args(sqlite_engine.url)[1] or {})
+def test_el_motor_cambia_segun_la_base_de_datos():
+    motor_sqlite = build_engine("sqlite:///x.db")
+    assert motor_sqlite.dialect.name == "sqlite"
+    assert motor_sqlite.pool._pre_ping is False
+    assert "sslmode" not in (motor_sqlite.dialect.create_connect_args(motor_sqlite.url)[1] or {})
 
-    pg_engine = build_engine("postgresql+psycopg://u:p@localhost/db")
-    assert pg_engine.dialect.name == "postgresql"
-    assert pg_engine.pool._pre_ping is True
-
-
-def test_index_renders_landing(client):
-    response = client.get("/")
-    assert response.status_code == 200
-    body = response.get_data(as_text=True)
-    assert "descubrir creadores" in body
-    assert "cómo funciona" in body
-    assert "/creadores" in body
+    motor_postgres = build_engine("postgresql+psycopg://u:p@localhost/db")
+    assert motor_postgres.dialect.name == "postgresql"
+    assert motor_postgres.pool._pre_ping is True
 
 
-def test_creators_index_lists_seeded_creators(client):
-    response = client.get("/creadores")
-    assert response.status_code == 200
-    body = response.get_data(as_text=True)
-    assert body.count('class="card creator-card"') == len(SEED_CREATORS)
-    for specialty in ("ropa", "props", "accesorios"):
-        assert f'data-filter="{specialty}"' in body
-    assert 'data-specialty="ropa"' in body
+def test_la_portada_carga(cliente):
+    respuesta = cliente.get("/")
+    assert respuesta.status_code == 200
+    cuerpo = respuesta.get_data(as_text=True)
+    assert "descubrir creadores" in cuerpo
+    assert "cómo funciona" in cuerpo
+    assert "/creadores" in cuerpo
 
 
-def test_creator_profile_shows_bio_and_works(client, app):
+def test_el_listado_muestra_los_creadores_del_seed(cliente):
+    respuesta = cliente.get("/creadores")
+    assert respuesta.status_code == 200
+    cuerpo = respuesta.get_data(as_text=True)
+    assert cuerpo.count('class="card creator-card"') == len(SEED_CREATORS)
+    for especialidad in ("ropa", "props", "accesorios"):
+        assert f'data-filter="{especialidad}"' in cuerpo
+    assert 'data-specialty="ropa"' in cuerpo
+
+
+def test_la_ficha_del_creador_muestra_bio_y_obras(cliente, aplicacion):
     slug = SEED_CREATORS[0]["slug"]
-    response = client.get(f"/creadores/{slug}")
-    assert response.status_code == 200
-    body = response.get_data(as_text=True)
-    assert SEED_CREATORS[0]["name"] in body
-    assert SEED_CREATORS[0]["bio"][:60] in body
-    for work in SEED_CREATORS[0]["works"]:
-        assert work["title"] in body
-        assert f"/obras/{work['slug']}" in body
+    respuesta = cliente.get(f"/creadores/{slug}")
+    assert respuesta.status_code == 200
+    cuerpo = respuesta.get_data(as_text=True)
+    assert SEED_CREATORS[0]["name"] in cuerpo
+    assert SEED_CREATORS[0]["bio"][:60] in cuerpo
+    for obra in SEED_CREATORS[0]["works"]:
+        assert obra["title"] in cuerpo
+        assert f"/obras/{obra['slug']}" in cuerpo
 
 
-def test_work_detail_shows_price_status_and_mailto(client):
-    creator = SEED_CREATORS[0]
-    work = creator["works"][1]
-    response = client.get(f"/obras/{work['slug']}")
-    assert response.status_code == 200
-    body = response.get_data(as_text=True)
-    assert work["title"] in body
-    assert work["description"] in body
-    assert work["price_note"] in body
-    assert work["status"] in body
-    assert f"mailto:{creator['contact_email']}" in body
-    assert f"/creadores/{creator['slug']}" in body
+def test_la_obra_muestra_precio_estado_y_correo(cliente):
+    creador = SEED_CREATORS[0]
+    obra = creador["works"][1]
+    respuesta = cliente.get(f"/obras/{obra['slug']}")
+    assert respuesta.status_code == 200
+    cuerpo = respuesta.get_data(as_text=True)
+    assert obra["title"] in cuerpo
+    assert obra["description"] in cuerpo
+    assert obra["price_note"] in cuerpo
+    assert obra["status"] in cuerpo
+    assert f"mailto:{creador['contact_email']}" in cuerpo
+    assert f"/creadores/{creador['slug']}" in cuerpo
 
 
-def test_work_without_price_falls_back_to_consult(client):
-    creator = next(c for c in SEED_CREATORS if any(w["price_note"] is None for w in c["works"]))
-    work = next(w for w in creator["works"] if w["price_note"] is None)
-    response = client.get(f"/obras/{work['slug']}")
-    body = response.get_data(as_text=True)
-    assert response.status_code == 200
-    assert "a consultar" in body
+def test_obra_sin_precio_muestra_a_consultar(cliente):
+    creador = next(c for c in SEED_CREATORS if any(o["price_note"] is None for o in c["works"]))
+    obra = next(o for o in creador["works"] if o["price_note"] is None)
+    respuesta = cliente.get(f"/obras/{obra['slug']}")
+    cuerpo = respuesta.get_data(as_text=True)
+    assert respuesta.status_code == 200
+    assert "a consultar" in cuerpo
 
 
-def test_healthz_reports_ok(client):
-    response = client.get("/healthz")
-    assert response.status_code == 200
-    assert response.get_json() == {"status": "ok"}
+def test_healthz_responde_ok(cliente):
+    respuesta = cliente.get("/healthz")
+    assert respuesta.status_code == 200
+    assert respuesta.get_json() == {"status": "ok"}
 
 
-def test_unknown_routes_render_custom_404(client):
-    for path in ("/no-existe", "/creadores/no-existe", "/obras/no-existe"):
-        response = client.get(path)
-        assert response.status_code == 404
-        body = response.get_data(as_text=True)
-        assert "esta página no existe" in body
-        assert "/creadores" in body
+def test_rutas_inexistentes_dan_404_propio(cliente):
+    for ruta in ("/no-existe", "/creadores/no-existe", "/obras/no-existe"):
+        respuesta = cliente.get(ruta)
+        assert respuesta.status_code == 404
+        cuerpo = respuesta.get_data(as_text=True)
+        assert "esta página no existe" in cuerpo
+        assert "/creadores" in cuerpo
 
 
-def test_seed_is_idempotent(app):
-    factory = app.extensions["db_session"]
-    with factory() as session:
-        assert session.scalar(select(func.count()).select_from(Creator)) == len(SEED_CREATORS)
-        works_per_creator = session.execute(
+def test_el_seed_no_duplica_datos(aplicacion):
+    fabrica = aplicacion.extensions["db_session"]
+    with fabrica() as sesion:
+        assert sesion.scalar(select(func.count()).select_from(Creator)) == len(SEED_CREATORS)
+        obras_por_creador = sesion.execute(
             select(Work.creator_id, func.count()).group_by(Work.creator_id)
         ).all()
-    assert all(2 <= count <= 3 for _, count in works_per_creator)
+    assert all(2 <= total <= 3 for _, total in obras_por_creador)
 
+    # Arrancar la aplicación otra vez no debe volver a sembrar el catálogo.
     create_app(
         {
             "TESTING": True,
-            "DATABASE_URL": app.config["DATABASE_URL"],
-            "SECRET_KEY": "test-key",
+            "DATABASE_URL": aplicacion.config["DATABASE_URL"],
+            "SECRET_KEY": "clave-de-pruebas",
         }
     )
 
-    with factory() as session:
-        assert session.scalar(select(func.count()).select_from(Creator)) == len(SEED_CREATORS)
+    with fabrica() as sesion:
+        assert sesion.scalar(select(func.count()).select_from(Creator)) == len(SEED_CREATORS)
 
 
-def test_robots_txt(client):
-    response = client.get("/robots.txt")
-    assert response.status_code == 200
-    body = response.get_data(as_text=True)
-    assert "User-agent: *" in body
-    assert "Sitemap: http" in body
+def test_robots_txt(cliente):
+    respuesta = cliente.get("/robots.txt")
+    assert respuesta.status_code == 200
+    cuerpo = respuesta.get_data(as_text=True)
+    assert "User-agent: *" in cuerpo
+    assert "Sitemap: http" in cuerpo
 
 
-def test_sitemap_lists_creators_and_works(client):
-    response = client.get("/sitemap.xml")
-    assert response.status_code == 200
-    assert response.mimetype == "application/xml"
-    body = response.get_data(as_text=True)
-    assert "<urlset" in body
-    assert "/creadores/" in body
-    assert "/obras/" in body
+def test_el_sitemap_incluye_creadores_y_obras(cliente):
+    respuesta = cliente.get("/sitemap.xml")
+    assert respuesta.status_code == 200
+    assert respuesta.mimetype == "application/xml"
+    cuerpo = respuesta.get_data(as_text=True)
+    assert "<urlset" in cuerpo
+    assert "/creadores/" in cuerpo
+    assert "/obras/" in cuerpo

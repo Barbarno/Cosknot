@@ -1,22 +1,26 @@
 ﻿# cosknot
 
-cosknot es una aplicación web en una fase inicial para personas que crean y disfrutan del cosplay y de trabajos hechos a mano relacionados con videojuegos, series, anime y otros mundos de ficción.
+cosknot es una web para encontrar gente que hace cosplay (ropa, props y accesorios) y
+poder escribirle directamente, sin intermediarios. Es el proyecto del módulo de 2º de
+SMR, hecho con Flask y una base de datos.
 
-## dirección actual
+La idea no es copiar un marketplace enorme. De momento la web sirve para tres cosas:
+descubrir creadores, ver su trabajo y contactar con ellos por correo.
 
-cosknot no pretende ser una copia de un marketplace general. En esta primera versión, la idea es ayudar a descubrir creadores, conocer mejor su trabajo y ponerse en contacto con ellos.
+## qué hay hecho
 
-## desplegado
+- portada con creadores destacados y obras recientes
+- listado de creadores con filtro por especialidad
+- ficha de cada creador con su biografía y sus obras
+- ficha de cada obra con precio orientativo, estado y botón de contacto
+- página 404 propia
+- `robots.txt` y `sitemap.xml` generados desde las rutas
+- `healthz` para comprobar que la base de datos responde
 
-- producción: https://cosknot.duckdns.org, con health check en `/healthz`.
-- dominio: subdominio gratuito de DuckDNS, apunta a render con un registro **A** a `216.24.57.1` (el ingress de render); DuckDNS no admite CNAME en este caso porque el nombre es apex para la PSL.
-- servicio: https://cosknot.onrender.com sigue activo como URL del servicio, y es la que usan los workflows de CI para sondear `/healthz`.
-- plataforma: render en plan free, región frankfurt, con base de datos neon (postgres) en la misma región.
-- el servicio se duerme tras 15 min sin tráfico: la primera petición siguiente tarda alrededor de 50 s por el cold start, no es una caída.
+## arrancarlo en local
 
-## ejecutar en local
-
-requisitos: python 3.13 y powershell en windows. los comandos se ejecutan desde la raíz del repositorio.
+Necesitas Python 3.13 y PowerShell en Windows. Los comandos se lanzan desde la raíz
+del repositorio.
 
 ```powershell
 python -m venv .venv
@@ -24,55 +28,49 @@ python -m venv .venv
 .venv\Scripts\python -m flask --app app run --debug
 ```
 
-el servidor queda en http://127.0.0.1:5000.
+Luego abres http://127.0.0.1:5000.
 
-pruebas:
+Si no hay `DATABASE_URL` en el entorno, la app usa SQLite en `cosknot.db`, que se crea
+sola la primera vez. También se rellena el catálogo de ejemplo, pero solo si la tabla
+`creators` está vacía, así que reiniciar no duplica nada.
+
+Para usar Neon en vez de SQLite, copia `.env.example` a `.env`, rellena `DATABASE_URL`
+y arranca igual.
+
+## pruebas
 
 ```powershell
 .venv\Scripts\python -m pytest -q
 ```
 
-sin `DATABASE_URL` en el entorno se usa sqlite en `cosknot.db` (creado en la raíz del repositorio). la primera ejecución crea las tablas con `Base.metadata.create_all` y siembra el catálogo de ejemplo; las siguientes no duplican datos porque la siembra solo actúa si la tabla `creators` está vacía. para apuntar a neon, copia `.env.example` a `.env` y rellena `DATABASE_URL`; el comando `flask run` carga ese fichero.
+Son pruebas con el cliente de Flask y una base de datos temporal, así que no tocan
+`cosknot.db`.
 
-## estructura del proyecto
+## estructura
 
-- `app.py`: fábrica de la aplicación flask, rutas públicas y health check.
-- `models.py`: modelos sqlalchemy de creadores y obras.
-- `seed.py`: datos de ejemplo y especialidades usadas en las plantillas.
-- `wsgi.py`: punto de entrada que consume gunicorn en producción.
-- `templates/`: plantillas jinja (base, index, creadores, creador, obra y 404).
-- `static/`: css y javascript del sitio.
+- `app.py`: crea la app, las rutas públicas y el health check.
+- `models.py`: los dos modelos de SQLAlchemy, creadores y obras.
+- `seed.py`: catálogo de ejemplo y lista de especialidades.
+- `wsgi.py`: lo que usa gunicorn en producción.
+- `templates/`: plantillas de Jinja.
+- `static/`: CSS y el JavaScript del filtro.
 - `tests/`: pruebas con pytest.
-- `scripts/`: utilidades de línea de comandos, como la comprobación de la base de datos.
-- `docs/cosknot-roadmap.md`: dirección del producto y aspectos técnicos.
-- `docs/cosknot-kanban.md`: tablero de trabajo con las tareas pendientes, en proceso, terminadas y aprobadas.
-- `docs/context.md`: contexto del proyecto e información del equipo.
-- `docs/context/cosknot-css-guide.md`: guía visual y de estilos CSS inicial.
-- `docs/decisions/`: decisiones de arquitectura y flujo de trabajo.
-- `docs/research/`: investigación con fuentes.
-- `docs/deployment.md`: pasos de despliegue en render y neon.
-- `docs/backups.md`: copias de seguridad y restauración de la base de datos.
-- `docs/data-model.md`: modelo de datos inicial (tablas, columnas, reglas y carencias).
-- `docs/troubleshooting/`: problemas, síntomas y soluciones.
-- `domains/cosknot.json`: registro alternativo para is-a.dev, abierto como reserva; el dominio activo es el de DuckDNS.
-- `render.yaml`: blueprint del servicio en render.
-- `requirements.txt`: dependencias de python.
+- `scripts/check_db.py`: comprueba que la base de datos de producción responde.
+- `docs/`: apuntes del proyecto (contexto, despliegue, modelo de datos...).
 
-## tecnologías de la primera versión
+## despliegue
 
-- python
-- flask
-- jinja
-- html y css
-- javascript vanilla
-- sqlite para el prototipo local
-- postgresql (neon)
-- gunicorn
-- pytest
-- git y github
-- github actions
-- render
-- duckdns
-- tls
+Está desplegado en Render con una base de datos gratuita de Neon:
 
-antes de añadir funciones nuevas, revisa `docs/cosknot-roadmap.md` y mantén la primera versión centrada en lo esencial: descubrir creadores y permitir el contacto.
+- producción: https://cosknot.duckdns.org (health check en `/healthz`)
+- servicio: https://cosknot.onrender.com
+
+El plan free duerme el servicio a los 15 minutos sin tráfico. La primera visita
+después tarda unos 50 segundos, no es que esté caído.
+
+Los pasos completos están en `docs/deployment.md`.
+
+## tecnologías
+
+Python, Flask, Jinja, SQLAlchemy, SQLite en local y PostgreSQL (Neon) en producción,
+gunicorn, pytest, GitHub Actions y Render.

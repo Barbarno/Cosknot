@@ -11,6 +11,8 @@ class Base(DeclarativeBase):
 
 
 class Creator(Base):
+    """Persona que hace cosplay. Tiene varias obras."""
+
     __tablename__ = "creators"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -34,6 +36,8 @@ class Creator(Base):
 
 
 class Work(Base):
+    """Una pieza publicada por un creador."""
+
     __tablename__ = "works"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)

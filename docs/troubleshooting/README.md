@@ -1,5 +1,6 @@
-# resolución de problemas
+# problemas y soluciones
 
-guarda aquí los errores y las soluciones que no sean evidentes
+Aquí apunto los errores que no son evidentes.
 
-incluye el síntoma, los pasos para reproducirlo, la causa principal, la solución y la comprobación realizada
+De cada uno guardo el síntoma, cómo se reproduce, la causa, el arreglo y cómo comprobé
+que quedó solucionado.

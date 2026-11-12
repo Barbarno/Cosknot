@@ -1,3 +1,3 @@
 # contexto
 
-guardar aquí hechos estables del proyecto y convenciones
+Aquí van los datos estables del proyecto y las normas que seguimos.

@@ -1,5 +1,5 @@
 # investigación
 
-guarda aquí las investigaciones que puedan volver a ser útiles
+Aquí guardo las investigaciones que pueden volver a servirme.
 
-incluye enlaces a fuentes primarias y separa los hechos de las suposiciones
+Pongo enlaces a las fuentes y separo lo que está comprobado de lo que supongo.

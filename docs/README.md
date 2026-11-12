@@ -1,16 +1,23 @@
-# memoria del proyecto
+# apuntes del proyecto
 
-esta carpeta es una base de conocimiento simple en markdown para el proyecto
+Aquí guardo las cosas que me sirven para seguir con cosknot y que no quiero volver a
+buscar. Está en Markdown normal, así que se puede leer desde GitHub o abrir la carpeta
+como bóveda de Obsidian.
 
-funciona como archivos normales y también se puede abrir como bóveda de obsidian
+## qué hay en cada carpeta
 
-## carpetas
+- `context.md`: de qué va el proyecto, quién lo lleva y qué hay montado ahora.
+- `cosknot-roadmap.md`: hacia dónde va y qué queda por decidir.
+- `cosknot-kanban.md`: el tablero, con lo pendiente y lo terminado.
+- `data-model.md`: las tablas de la base de datos y sus reglas.
+- `deployment.md`: cómo está desplegado y cómo se repite.
+- `backups.md`: copias de seguridad y secretos.
+- `decisions/`: decisiones importantes y por qué se tomaron.
+- `research/`: cosas que investigué con fuentes.
+- `troubleshooting/`: errores que ya me han pasado y cómo los arreglé.
+- `context/cosknot-css-guide.md`: colores y criterios de la parte visual.
 
-- `context/` hechos estables convenciones y orientación del proyecto
-- `decisions/` decisiones importantes y sus motivos
-- `research/` temas investigados con fuentes
-- `troubleshooting/` problemas síntomas causas y soluciones
+Solo apunto aquí lo que me va a servir más adelante. Lo del día a día se queda en el
+commit o en la tarea del tablero.
 
-el conocimiento duradero se guarda aquí solo cuando vaya a servir en trabajo futuro; lo que es efímero se queda en el issue o en el commit
-
-nunca guardar contraseñas claves api tokens ni datos personales sensibles
+Nunca guardo contraseñas, claves de API ni datos personales.

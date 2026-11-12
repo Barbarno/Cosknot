@@ -1,4 +1,4 @@
-name: backup
+name: copia de seguridad
 
 on:
   schedule:
@@ -18,7 +18,8 @@ jobs:
           set -euo pipefail
           command -v pg_dump || (sudo apt-get update -qq && sudo apt-get install -y postgresql-client)
 
-      # NEON_DATABASE_URL debe ser la cadena sin -pooler: pg_dump necesita conexion directa.
+      # NEON_DATABASE_URL tiene que ser la cadena sin -pooler: pg_dump necesita
+      # conectar directamente, no a través del pooler.
       - name: pg_dump a formato custom
         env:
           NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
@@ -27,9 +28,9 @@ jobs:
           DUMP="cosknot-db-${{ github.run_number }}.dump"
           pg_dump --no-owner --no-privileges --format=custom -f "$DUMP" "$NEON_DATABASE_URL"
           SIZE=$(stat -c%s "$DUMP")
-          echo "tamano del dump: $SIZE bytes"
+          echo "tamaño del dump: $SIZE bytes"
           if [ "$SIZE" -lt 1024 ]; then
-            echo "dump de $SIZE bytes: conexion mala o base vacia" >&2
+            echo "dump de $SIZE bytes: conexión mala o base vacía" >&2
             exit 1
           fi
 

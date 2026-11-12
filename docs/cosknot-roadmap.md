@@ -1,85 +1,84 @@
-# roadmap del proyecto cosknot
+# roadmap
 
-## idea de producto
+## la idea
 
-cosknot conecta a creadores de cosplay creadores y fans alrededor de ropa accesorios props y otro trabajo hecho a mano relacionado con juegos series anime y mundos de ficción similares
+cosknot conecta a creadores de cosplay con gente que busca ropa, props, accesorios y
+trabajo hecho a mano de juegos, series, anime y mundos parecidos.
 
-la primera decisión de producto sigue abierta
-el equipo debe decidir si la primera versión se enfoca en descubrimiento de creadores portafolios interacción de comunidad o venta directa
+La decisión importante de producto sigue abierta: si la primera versión es un
+directorio de creadores, un feed de comunidad o una tienda. Lo que está claro es que
+no se hacen las tres cosas a la vez.
 
-no construir todo eso a la vez
+## reparto del trabajo
 
-## responsabilidades del equipo
+### en general
 
-### general
+- dejar claro qué problema resuelve la web y para quién
+- mirar comunidades parecidas
+- elegir el competidor más conocido
+- preparar un SWOT corto y una idea del mercado
 
-- aclarar la idea y el usuario objetivo
-- investigar comunidades comparables
-- identificar el competidor más reconocible
-- preparar un swot corto y una visión de mercado
+### Daniel B.
 
-### ceo y cmo
+- llevar el repositorio de GitHub
+- mantener el README
+- organizar el tablero
+- pensar el posicionamiento y las primeras pruebas de crecimiento
 
-- crear el repositorio de github
-- mantener el readme
-- coordinar el tablero del proyecto
-- definir el posicionamiento y los primeros experimentos de crecimiento
-
-### cto
+### Jesús
 
 - elegir el stack
 - definir el modelo de datos y la arquitectura
-- definir pruebas y despliegue
-- evaluar funciones de ia sin añadir ia solo de adorno
+- pruebas y despliegue
+- valorar si la IA aporta algo de verdad o es adorno
 
-### cfo
+### Daniel T.
 
-- identificar posibles fuentes de ingresos
-- estimar costos iniciales y de mantenimiento
-- separar costos puntuales de costos recurrentes
-- registrar supuestos en lugar de presentar conjeturas como hechos
+- ver de dónde pueden salir ingresos
+- calcular costes iniciales y de mantenimiento
+- separar gastos puntuales de gastos fijos
+- apuntar los supuestos en vez de presentarlos como hechos
 
 ### diseño
 
-- decidir el tratamiento del nombre y la dirección del logo
-- definir opciones de eslogan
-- aprobar los valores exactos de los colores
-- definir tipografía y jerarquía visual
-- mantener el diseño expresivo sin dificultar el descubrimiento
+- decidir el nombre y el logo
+- proponer eslóganes
+- aprobar los colores exactos
+- elegir tipografía y jerarquía visual
+- que el diseño se note pero no estorbe para encontrar cosas
 
-## stack recomendado para la primera versión
+## stack
 
-### primera versión
+### para la primera versión
 
-- python para el backend porque encaja con la ruta de aprendizaje actual del equipo
-- flask para un servidor web pequeño y comprensible
-- jinja para html renderizado en servidor
-- html y css para la interfaz
-- javascript vanilla para interacciones pequeñas
-- sqlite para el primer prototipo local
-- pytest para pruebas automatizadas
-- git y github para control de versiones y colaboración
+- Python, porque es lo que estamos aprendiendo
+- Flask, un servidor pequeño y fácil de seguir
+- Jinja para generar el HTML en el servidor
+- HTML y CSS para la interfaz
+- JavaScript normalito para el filtro
+- SQLite para el prototipo local
+- pytest para las pruebas
+- Git y GitHub para el control de versiones
 
-### más adelante cuando el producto tenga uso real
+### más adelante, si la web se usa
 
-- postgresql en lugar de sqlite para datos de producción
-- un servicio adecuado de almacenamiento de objetos para las imágenes
-- aws solo después de conocer los requisitos de despliegue
-- un servicio de ia solo para un caso de uso validado como etiquetado descubrimiento o soporte a creadores
+- PostgreSQL en vez de SQLite
+- un servicio de almacenamiento para las imágenes
+- AWS solo cuando haga falta de verdad
+- IA solo si hay un caso claro, como etiquetar o ayudar a los creadores
 
 ## por qué este stack
 
-es lo bastante simple para que un principiante lo entienda de punta a punta
-evita esconder los fundamentos detrás de un framework de frontend
-puede crecer hasta ser un producto real sin tirar el primer prototipo
+Es sencillo de entender de principio a fin, no esconde lo básico detrás de un framework
+de frontend y se puede ampliar sin tirar el prototipo.
 
-## decisiones que todavía faltan
+## decisiones pendientes
 
 - el primer usuario y el primer problema exactos
-- si la primera versión es un directorio de portafolios un feed de comunidad o un flujo de venta
+- si la primera versión es un directorio, un feed o una tienda
 - color terracota final
 - tipografía
-- modelo de ingresos inicial
-- ~~proveedor de despliegue y dominio~~ → decidido en `docs/decisions/0001-stack-despliegue-dominio.md`
-- reglas de privacidad moderación y propiedad del contenido
-- si la ia entra en la versión uno
+- modelo de ingresos
+- ~~proveedor de despliegue y dominio~~ (decidido en `decisions/0001-stack-despliegue-dominio.md`)
+- normas de privacidad, moderación y propiedad del contenido
+- si la IA entra en la primera versión

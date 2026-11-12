@@ -1,15 +1,17 @@
-# Backups y deploy
+# copias de seguridad y despliegue
 
-## Qué hace cada workflow
+## qué hace cada workflow
 
-| Workflow | Disparo | Qué hace | Retención |
+| workflow | cuándo | qué hace | cuánto se guarda |
 |---|---|---|---|
-| `.github/workflows/deploy.yml` | push a `main`, `workflow_dispatch` | `POST /v1/services/<id>/deploys` en la API de Render y espera `/healthz` 200 (20 intentos, 15 s) | — |
-| `.github/workflows/backup.yml` | domingo 03:00 UTC, `workflow_dispatch` | `pg_dump` formato custom y lo sube como artefacto `cosknot-db-<run_number>` | 30 días |
+| `.github/workflows/deploy.yml` | push a `main` o a mano | pide un despliegue a la API de Render y espera a que `/healthz` devuelva 200 (20 intentos de 15 s) | nada |
+| `.github/workflows/backup.yml` | domingos a las 03:00 UTC o a mano | hace un `pg_dump` en formato custom y lo sube como artefacto `cosknot-db-<run_number>` | 30 días |
 
-El servicio tiene `autoDeploy: yes` sobre el repo público, así que Render también despliega por su cuenta al detectar el commit. El workflow fuerza el deploy cuando ese polling no lo pilla y sirve de verificación: si `/healthz` no responde, el push se marca en rojo.
+El servicio tiene el autodespliegue activado en Render, así que normalmente Render
+despliega solo cuando ve el commit. El workflow fuerza el despliegue cuando el polling
+no lo pilla y, de paso, avisa si `/healthz` no responde.
 
-## Secretos del repositorio
+## secretos del repositorio
 
 ```bash
 gh secret set RENDER_API_KEY
@@ -17,23 +19,27 @@ gh secret set RENDER_SERVICE_ID
 gh secret set NEON_DATABASE_URL
 ```
 
-- `RENDER_API_KEY`: Render → avatar → **Account Settings** → **API Keys** → crear. Solo se muestra una vez.
-- `RENDER_SERVICE_ID`: `srv-dbqte8bl550s73er4bcg` (servicio `cosknot`).
-- `NEON_DATABASE_URL`: Neon Console → proyecto → **Connect** → **desactivar Connection pooling** → copiar la cadena `postgresql://...` directa. La cadena con `-pooler` no sirve para `pg_dump`.
+- `RENDER_API_KEY`: en Render, avatar → **Account Settings** → **API Keys**. Solo se
+  muestra una vez.
+- `RENDER_SERVICE_ID`: `srv-dbqte8bl550s73er4bcg`, el servicio `cosknot`.
+- `NEON_DATABASE_URL`: en la consola de Neon, **Connect**, desactiva el connection
+  pooling y copia la cadena `postgresql://...` directa. La que lleva `-pooler` no
+  sirve para `pg_dump`.
 
-## Restaurar
+## restaurar una copia
 
 ```bash
 pg_restore --clean --no-owner -d "$NEON_DATABASE_URL" cosknot-db-N.dump
 ```
 
-`N` es el `run_number` del workflow; el dump se descarga desde la pestaña Artifacts del run.
+`N` es el número de ejecución del workflow. El dump se descarga desde la pestaña
+Artifacts de esa ejecución.
 
-## Fallos frecuentes
+## fallos que ya me han pasado
 
-| Síntoma | Causa | Arreglo |
+| síntoma | causa | arreglo |
 |---|---|---|
-| Trigger responde 401/404 | Clave de API revocada o `RENDER_SERVICE_ID` mal | Regenerar la clave y actualizar el secreto |
-| Health check nunca responde | Cold start > 5 min o crash en el arranque | Revisar logs en Render; subir el margen de intentos o corregir el arranque |
-| Dump de menos de 1 KB | Cadena con `-pooler` o credenciales malas | Usar la cadena directa de Neon |
-| `pg_dump: server version mismatch` | Cliente del runner más viejo que el servidor Neon | Instalar `postgresql-client` de la versión del servidor en el paso de apt |
+| el trigger devuelve 401 o 404 | clave revocada o `RENDER_SERVICE_ID` mal | regenerar la clave y actualizar el secreto |
+| el health check no responde nunca | arranque lento o crash | mirar los logs de Render y corregir el arranque |
+| el dump ocupa menos de 1 KB | cadena con `-pooler` o credenciales malas | usar la cadena directa de Neon |
+| `pg_dump: server version mismatch` | cliente más viejo que el servidor | instalar el `postgresql-client` de la versión del servidor |

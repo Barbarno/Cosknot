@@ -1,8 +1,8 @@
 # decisiones
 
-una nota por cada decisión importante de arquitectura o de flujo de trabajo
+Una nota por cada decisión importante de arquitectura o de forma de trabajar.
 
-usa esta estructura
+Uso esta estructura:
 
 ```md
 # título de la decisión
@@ -14,15 +14,15 @@ estado: aceptada
 
 qué se ha elegido
 
-## motivo
+## por qué
 
 las razones principales
 
 ## alternativas
 
-qué se ha descartado y por qué
+qué se descartó y por qué
 
-## revisar si
+## cuándo revisar
 
-qué haría que esta decisión dejara de ser válida
+qué haría falta para cambiar de idea
 ```

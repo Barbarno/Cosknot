@@ -1,53 +1,52 @@
-# kanban de cosknot
+# tablero de cosknot
 
-mover cada tarjeta entre estas columnas
+Cada tarea se mueve entre estas columnas.
 
 ## por hacer
 
-- [ ] escribir la definición del producto en una sola frase
+- [ ] escribir la definición del producto en una frase
 - [ ] definir el primer usuario objetivo
-- [ ] elegir el primer problema del usuario a resolver
+- [ ] elegir el primer problema que resolvemos
 - [ ] investigar el competidor más cercano
-- [ ] escribir el análisis swot
-- [ ] crear el tablero de proyecto de github
+- [ ] escribir el SWOT
+- [ ] crear el tablero del proyecto en GitHub
 - [ ] elegir la tipografía
-- [ ] crear el brief de nombre y logo
-- [ ] escribir opciones de eslogan
-- [ ] decidir la primera hipótesis de ingresos
-- [ ] estimar costos iniciales y recurrentes
-- [ ] decidir si la ia entra en la primera versión
-- [ ] definir reglas de privacidad moderación y propiedad del contenido
-- [ ] añadir autenticación solo después de que funcione el flujo público
+- [ ] hacer el brief del nombre y el logo
+- [ ] proponer eslóganes
+- [ ] decidir de dónde salen los primeros ingresos
+- [ ] calcular costes iniciales y fijos
+- [ ] decidir si la IA entra en la primera versión
+- [ ] escribir las normas de privacidad, moderación y contenido
+- [ ] añadir login, pero solo cuando el flujo público funcione
 
 ## en curso
 
-- [ ] mover aquí el trabajo activo y añadir el responsable y la fecha límite
+- [ ] mover aquí lo que se esté haciendo, con responsable y fecha
 
 ## hecho
 
-- [x] creadas las reglas del espacio de trabajo y la estructura de memoria del proyecto
-- [x] crear el repositorio de github
-- [x] escribir el readme del proyecto
+- [x] crear el repositorio de GitHub
+- [x] escribir el README
 - [x] definir el modelo de datos inicial
-- [x] elegir el color terracota exacto
-- [x] construir la landing page
-- [x] construir el descubrimiento de creadores
-- [x] construir el perfil de creador
-- [x] construir la página de detalle de una obra de cosplay
-- [x] añadir los primeros modelos de base de datos
+- [x] elegir el color terracota
+- [x] montar la portada
+- [x] montar el listado de creadores con filtro
+- [x] montar la ficha de creador
+- [x] montar la ficha de obra
+- [x] crear los modelos de la base de datos
 - [x] añadir pruebas con pytest
-- [x] desplegar una versión privada de prueba
-- [x] conectar un dominio y https
+- [x] desplegar una versión de prueba
+- [x] conectar un dominio y HTTPS
 
 ## aprobado
 
-- [ ] mover aquí el trabajo revisado después de que lo apruebe la persona responsable
+- [ ] mover aquí lo revisado y aprobado por el responsable
 
-## formato de tarjeta
+## cómo se apunta una tarea
 
 ```md
 - [ ] nombre de la tarea
   responsable: nombre
   motivo: por qué importa
-  terminado cuando: condición de finalización medible
+  terminado cuando: condición medible
 ```

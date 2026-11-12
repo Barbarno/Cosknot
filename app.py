@@ -1,11 +1,15 @@
+"""Aplicación de cosknot: rutas públicas, base de datos y health check."""
+
 from __future__ import annotations
 
 import os
 from typing import Any
+from xml.sax.saxutils import escape
 
 from flask import Flask, Response, g, render_template, request, url_for
 from sqlalchemy import create_engine, func, select, text
 from sqlalchemy.engine import Engine
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -33,8 +37,9 @@ def build_engine(url: str) -> Engine:
             options["poolclass"] = StaticPool
     else:
         options["pool_pre_ping"] = True
-        # Neon sirve por pgbouncer en transaction mode: no hay estado de sesion entre
-        # transacciones, asi que los prepared statements cacheados por psycopg3 fallan.
+        # Neon va por pgbouncer en modo transacción: no guarda estado entre
+        # transacciones, así que los prepared statements que cachea psycopg3
+        # fallan. Desactivando la caché no hay problema.
         options["connect_args"] = {"sslmode": "require", "prepare_threshold": None}
     return create_engine(url, **options)
 
@@ -43,12 +48,23 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
     app = Flask(__name__)
     app.config.from_mapping(
         DATABASE_URL=normalize_database_url(os.environ.get("DATABASE_URL")),
-        SECRET_KEY=os.environ.get("SECRET_KEY", "dev-only-not-a-secret"),
-        ENV=os.environ.get("FLASK_ENV", "production"),
+        SECRET_KEY=os.environ.get("SECRET_KEY"),
     )
     if config:
         app.config.update(config)
         app.config["DATABASE_URL"] = normalize_database_url(app.config["DATABASE_URL"])
+
+    # en produccion la falta de una variable tiene que romper el arranque: con
+    # los valores por defecto anteriores la app respondia 200 firmada con un
+    # secreto publicado en el repo, o con la base de datos en el disco efimero
+    # del contenedor, y los datos desaparecian en el siguiente despliegue.
+    # render define RENDER=true por su cuenta en todos sus servicios.
+    if os.environ.get("RENDER") and not app.config.get("TESTING"):
+        faltan = [k for k in ("SECRET_KEY", "DATABASE_URL") if not os.environ.get(k)]
+        if faltan:
+            raise RuntimeError(
+                "faltan variables de entorno en produccion: " + ", ".join(faltan)
+            )
 
     engine = build_engine(app.config["DATABASE_URL"])
     session_factory = sessionmaker(bind=engine, expire_on_commit=False)
@@ -56,8 +72,14 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
     app.extensions["db_session"] = session_factory
 
     Base.metadata.create_all(engine)
-    with session_factory() as bootstrap:
-        seed_database(bootstrap)
+    # gunicorn arranca dos workers y cada uno ejecuta create_app(): los dos
+    # pueden ver las tablas vacias y sembrar a la vez, y el segundo choca
+    # contra el indice unico de slug. Perder esa carrera es lo esperado.
+    try:
+        with session_factory() as bootstrap:
+            seed_database(bootstrap)
+    except IntegrityError:
+        pass
 
     @app.before_request
     def open_session() -> None:
@@ -68,6 +90,28 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
         session: Session | None = g.pop("db", None)
         if session is not None:
             session.close()
+
+    @app.after_request
+    def cabeceras_de_seguridad(response: Response) -> Response:
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        response.headers.setdefault(
+            "Permissions-Policy", "geolocation=(), camera=(), microphone=()"
+        )
+        response.headers.setdefault(
+            "Content-Security-Policy",
+            "default-src 'self'; object-src 'none'; base-uri 'none'; "
+            "form-action 'self'; frame-ancestors 'none'",
+        )
+        response.headers.setdefault(
+            "Strict-Transport-Security", "max-age=31536000; includeSubDomains"
+        )
+        # el alias de render sirve la misma app y no queremos que compita en
+        # buscadores con el dominio propio
+        if request.host.endswith(".onrender.com"):
+            response.headers.setdefault("X-Robots-Tag", "noindex")
+        return response
 
     @app.context_processor
     def inject_globals() -> dict[str, Any]:
@@ -118,7 +162,8 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
         urls += [url_for("creator_detail", slug=s.slug) for s in g.db.scalars(select(Creator)).all()]
         urls += [url_for("work_detail", slug=w.slug) for w in g.db.scalars(select(Work)).all()]
         entries = "".join(
-            f"<url><loc>{request.url_root.rstrip('/')}{path}</loc></url>" for path in urls
+            f"<url><loc>{escape(request.url_root.rstrip('/'))}{path}</loc></url>"
+            for path in urls
         )
         body = (
             '<?xml version="1.0" encoding="UTF-8"?>'
@@ -138,6 +183,11 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
     @app.errorhandler(404)
     def not_found(error: Exception) -> tuple[str, int]:
         return render_template("404.html"), 404
+
+    @app.errorhandler(405)
+    def method_not_allowed(error: Exception) -> tuple[str, int]:
+        # sin esto werkzeug devuelve su plantilla en ingles y delata el framework
+        return render_template("404.html"), 405
 
     return app
 

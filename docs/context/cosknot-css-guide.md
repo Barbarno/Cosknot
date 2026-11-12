@@ -1,8 +1,8 @@
-# guía css de cosknot
+# guía de CSS de cosknot
 
-## variables de color
+## colores
 
-usar variables css para que la identidad visual pueda cambiar sin reescribir cada componente
+Uso variables de CSS para poder cambiar la identidad visual sin tocar cada componente.
 
 ```css
 :root {
@@ -15,31 +15,30 @@ usar variables css para que la identidad visual pueda cambiar sin reescribir cad
 }
 ```
 
-el valor terracota es #d97757, aprobado en la nota de planificación del proyecto
+El terracota es `#d97757` y está aprobado en la nota de planificación del proyecto.
 
-## qué hace cada concepto css en cosknot
+## qué hace cada cosa
 
-- el modelo de caja controla el padding los bordes y el espaciado de las tarjetas
-- flexbox maneja barras de navegación botones filas de filtros y acciones del vendedor
-- grid maneja galerías de productos del marketplace y layouts de categorías
-- las variables mantienen consistente la identidad de blanco negro y terracota
-- las media queries hacen que las tarjetas de producto y la navegación funcionen en teléfonos
-- los estados hover focus y active hacen que los controles sean comprensibles
-- `object-fit: cover` mantiene alineadas las imágenes de producto en las tarjetas
-- la tipografía controla la jerarquía entre nombres de producto precios metadatos y descripciones
-- `position: sticky` puede mantener visibles los filtros o un panel de compra cuando sea útil
-- las transiciones deben ser sutiles y apoyar el contenido no distraer de él
+- El modelo de caja controla el relleno, los bordes y el espacio de las tarjetas.
+- Flexbox resuelve la navegación, los botones y la fila de filtros.
+- Grid coloca la rejilla de creadores y de obras.
+- Las variables mantienen el blanco, el negro y el terracota iguales en todo el sitio.
+- Las media queries adaptan la rejilla y la navegación al móvil.
+- Los estados `hover`, `focus` y `active` hacen que los controles se entiendan.
+- `object-fit: cover` sirve para las imágenes que añadamos más adelante.
+- La tipografía marca la diferencia entre nombre, precio, metadatos y descripción.
+- `position: sticky` puede servir para dejar los filtros a la vista.
+- Las transiciones tienen que ser suaves y no distraer.
 
-## primeras pantallas visuales
+## pantallas que hay que cubrir
 
-1. landing page
-2. grid de descubrimiento de productos
-3. página de detalle de producto
-4. perfil de vendedor
-5. formulario simple para publicar un listado
+1. Portada.
+2. Listado de creadores.
+3. Ficha de obra.
+4. Perfil del creador.
+5. Un formulario simple para publicar una obra.
 
-## límite del primer mvp
+## límite de la primera versión
 
-no empezar con pagos chat recomendaciones reseñas moderación ni una red social completa
-
-primero demostrar que un visitante puede descubrir un artículo de cosplay abrir su página de detalle y entender quién lo vende
+Nada de pagos, chat, recomendaciones, reseñas ni moderación. Primero hay que demostrar
+que una persona puede entrar, encontrar una pieza, abrir su ficha y saber quién la hace.

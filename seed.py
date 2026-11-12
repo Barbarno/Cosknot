@@ -408,7 +408,7 @@ SEED_CREATORS = [
 
 
 def seed_database(session: Session) -> bool:
-    """Insert the demo catalogue when the creators table is empty."""
+    """Mete el catálogo de ejemplo, pero solo si la tabla de creadores está vacía."""
     existing = session.scalar(select(func.count()).select_from(Creator))
     if existing:
         return False

@@ -1,6 +1,6 @@
-# este fichero no es la fuente de verdad: el servicio se creó desde Public Git Repository
-# en el panel de Render y se gestiona allí. además, aquí se declaraban variables que no
-# existen en Render (FLASK_ENV, PYTHONUNBUFFERED). se mantiene solo como referencia.
+# Este fichero no es la fuente de verdad: el servicio se creó desde Public Git Repository
+# en el panel de Render y se gestiona allí. Además, aquí se declaraban variables que no
+# existen en Render (FLASK_ENV, PYTHONUNBUFFERED). Se queda solo como referencia.
 services:
   - type: web
     name: cosknot
@@ -19,7 +19,8 @@ services:
         generateValue: true
       - key: DATABASE_URL
         sync: false
-    # el dominio real ya esta activo y verificado en el panel de render, no por
-    # este blueprint. si algun dia se despliega desde render.yaml, esta es la lista.
+    # El dominio real ya está activo y verificado en el panel de Render, no por este
+    # blueprint. Si algún día se despliega desde render.yaml, esta es la lista.
     domains:
       - cosknot.duckdns.org
+      - www.cosknot.duckdns.org
