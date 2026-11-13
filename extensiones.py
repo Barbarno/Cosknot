@@ -9,11 +9,12 @@ from flask_wtf import CSRFProtect
 
 csrf = CSRFProtect()
 
-# Almacenamiento en memoria a propósito: con dos workers de gunicorn el límite
-# es por proceso, así que el cupo real es el doble. Está anotado en
-# docs/decisions/0002-decisiones-marketplace.md; para un límite exacto haría
-# falta un backend compartido (Redis) y el plan free de Render no lo incluye.
-limiter = Limiter(key_func=get_remote_address, storage_uri="memory://")
+# El almacenamiento se decide en `create_app` con la config RATELIMIT_STORAGE_URI
+# (por defecto memory://). En Heroku no hay Redis: el contador vive en la memoria
+# del único proceso web, es exacto mientras haya un worker y se pierde cuando el
+# dyno se reinicia o cambia de máquina. Está anotado en docs/decisions/0003.
+limiter = Limiter(key_func=get_remote_address)
+
 
 login_manager = LoginManager()
 login_manager.login_view = "auth.entrar"

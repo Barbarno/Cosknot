@@ -13,6 +13,7 @@ from flask import Flask, Response, g, render_template, request, url_for
 from sqlalchemy import func, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from db import DEFAULT_DATABASE_URL, build_engine, normalize_database_url
 from almacenamiento import crear_almacen, origen_de
@@ -23,7 +24,6 @@ from extensiones import csrf, limiter, login_manager
 from formularios import PedidoForm
 from fotos import foto
 from importes import formato_importe
-from migraciones import aplicar_migraciones
 from models import Base, Creator, User, Work
 from seed import SPECIALTIES, seed_database
 
@@ -135,6 +135,46 @@ def debe_sembrar(url: str, seed_on_start: str | None) -> bool:
     return url.startswith("sqlite") or seed_on_start == "1"
 
 
+def es_produccion() -> bool:
+    """¿Estamos sirviendo la web de verdad?
+
+    Heroku no deja una variable de entorno propia y fiable salvo `DYNO`, así que
+    el criterio es explícito: `APP_ENV=production` manda; si no está puesta, la
+    presencia de `DYNO` (un dyno de Heroku) implica producción. En local no hay
+    ninguna de las dos y la app arranca en modo desarrollo.
+    """
+    entorno = (
+        os.environ.get("APP_ENV") or os.environ.get("FLASK_ENV") or ""
+    ).strip().lower()
+    if entorno:
+        return entorno in ("production", "prod")
+    return bool(os.environ.get("DYNO"))
+
+
+def proxies_de_confianza() -> tuple[int, int]:
+    """Número de proxies de confianza para X-Forwarded-For y X-Forwarded-Proto.
+
+    La cadena real es Cloudflare (solo DNS, ver docs/decisions/0003) → router de
+    Heroku → gunicorn → app. Con Cloudflare en modo "DNS only" el único proxy que
+    añade cabeceras es el router de Heroku, así que se confía en un solo salto.
+    Si algún día se activa el proxy naranja de Cloudflare, hay que subir
+    `PROXY_FIX_X_FOR` a 2 o el límite de intentos contará la IP del edge.
+
+    Se acota a 0..5 para que un valor absurdo en una config var no permita
+    falsificar la IP desde el cliente.
+    """
+
+    def leer(variable: str) -> int:
+        crudo = (os.environ.get(variable) or "1").strip()
+        try:
+            valor = int(crudo)
+        except ValueError:
+            return 1
+        return max(0, min(5, valor))
+
+    return leer("PROXY_FIX_X_FOR"), leer("PROXY_FIX_X_PROTO")
+
+
 def configurar_registro(nivel: str | None = None) -> None:
     """Nivel de log por variable de entorno; por defecto INFO."""
     import logging
@@ -187,17 +227,29 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
         app.config.update(config)
         app.config["DATABASE_URL"] = normalize_database_url(app.config["DATABASE_URL"])
 
+    es_test = bool(app.config.get("TESTING"))
+    produccion = es_produccion() and not es_test
+
     # En producción, si falta una variable el arranque tiene que romper. Con los
     # valores por defecto que había antes, la app respondía 200 firmada con un
     # secreto publicado en el repo, o con la base de datos en el disco efímero del
-    # contenedor, y los datos desaparecían en el siguiente despliegue. Render
-    # define RENDER=true por su cuenta en todos sus servicios.
-    if os.environ.get("RENDER") and not app.config.get("TESTING"):
+    # contenedor, y los datos desaparecían en el siguiente despliegue.
+    if produccion:
         faltan = [k for k in ("SECRET_KEY", "DATABASE_URL") if not os.environ.get(k)]
         if faltan:
             raise RuntimeError(
                 "faltan variables de entorno en producción: " + ", ".join(faltan)
             )
+
+    # El router de Heroku termina el TLS y reenvía X-Forwarded-Proto y
+    # X-Forwarded-For. Sin ProxyFix, Flask creería que la petición va por http
+    # (redirecciones a sí misma en bucle) y `request.remote_addr` sería el del
+    # router, con lo que el límite de intentos contaría a todos los visitantes en
+    # el mismo cubo. Se confía solo en los saltos declarados.
+    x_for, x_proto = proxies_de_confianza()
+    app.wsgi_app = ProxyFix(
+        app.wsgi_app, x_for=x_for, x_proto=x_proto, x_host=0, x_port=0
+    )
 
     engine = build_engine(app.config["DATABASE_URL"])
     session_factory = sessionmaker(bind=engine, expire_on_commit=False)
@@ -205,15 +257,20 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
     app.extensions["db_session"] = session_factory
 
     es_sqlite = app.config["DATABASE_URL"].startswith("sqlite")
-    es_test = bool(app.config.get("TESTING"))
-    produccion = bool(os.environ.get("RENDER")) and not es_test
 
     app.config.update(
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE="Lax",
         # Secure solo cuando la web va por https: en local (http) el navegador no
         # enviaría la cookie y no se podría entrar.
-        SESSION_COOKIE_SECURE=bool(os.environ.get("RENDER")) and not es_test,
+        SESSION_COOKIE_SECURE=produccion,
+    )
+    # El almacenamiento del límite de intentos. En Heroku no hay Redis (3 $ más
+    # romperían el tope de 13), así que va en memoria del único proceso web: es
+    # exacto mientras haya un worker, y se pierde al reiniciar el dyno.
+    app.config.setdefault(
+        "RATELIMIT_STORAGE_URI",
+        (os.environ.get("RATELIMIT_STORAGE_URI") or "memory://").strip(),
     )
     # En tests se desactivan por defecto; una prueba puede volver a activarlos
     # pasándolos en `config`.
@@ -264,20 +321,19 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
     ):
         app.config.setdefault(variable, os.environ.get(variable))
 
-    # En PostgreSQL el esquema lo mueve Alembic, con un advisory lock para que los
-    # dos workers de gunicorn no migren a la vez. En SQLite (local y tests) se crea
-    # con create_all: es instantáneo, idempotente y no hay despliegue que coordinar.
+    # En SQLite (local y tests) el esquema se crea con create_all: es instantáneo
+    # e idempotente. En PostgreSQL lo mueve Alembic desde el proceso `release`
+    # del Procfile, una sola vez por despliegue; si la migración falla, Heroku
+    # aborta el despliegue y sigue sirviendo la versión anterior.
     if es_sqlite:
         Base.metadata.create_all(engine)
-    else:
-        aplicar_migraciones(app.config["DATABASE_URL"])
 
     # El catálogo de ejemplo solo se siembra en local o cuando se pide a mano con
     # SEED_ON_START=1 / `flask sembrar`. En producción no se toca la base al arrancar.
     if debe_sembrar(app.config["DATABASE_URL"], os.environ.get("SEED_ON_START")):
-        # gunicorn arranca dos workers y cada uno ejecuta create_app(): los dos pueden
-        # ver las tablas vacías y sembrar a la vez, y el segundo choca contra el índice
-        # único de slug. Perder esa carrera es lo normal.
+        # Cada proceso que arranca puede ver las tablas vacías y sembrar a la vez;
+        # el segundo choca contra el índice único de slug. Perder esa carrera es
+        # lo normal y no es un error.
         try:
             with session_factory() as bootstrap:
                 seed_database(bootstrap)
@@ -389,9 +445,9 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
         response.headers.setdefault(
             "Strict-Transport-Security", "max-age=31536000; includeSubDomains"
         )
-        # El alias de Render sirve la misma app y no quiero que compita en
+        # El alias de Heroku sirve la misma app y no quiero que compita en
         # buscadores con el dominio propio.
-        if request.host.endswith(".onrender.com"):
+        if request.host.endswith(".herokuapp.com"):
             response.headers.setdefault("X-Robots-Tag", "noindex")
         return response
 

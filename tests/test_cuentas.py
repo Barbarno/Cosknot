@@ -232,7 +232,7 @@ def test_las_cookies_de_sesion_son_httponly_y_lax(aplicacion):
 
 
 def test_en_produccion_la_cookie_va_marcada_secure(tmp_path, monkeypatch):
-    monkeypatch.setenv("RENDER", "true")
+    monkeypatch.setenv("APP_ENV", "production")
     monkeypatch.setenv("SECRET_KEY", "clave")
     monkeypatch.setenv("DATABASE_URL", f"sqlite:///{(tmp_path / 'prod.db').as_posix()}")
     app = create_app({"DATABASE_URL": f"sqlite:///{(tmp_path / 'prod.db').as_posix()}"})

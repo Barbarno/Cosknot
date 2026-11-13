@@ -1,0 +1,13 @@
+# Lo que no viaja en el slug de Heroku.
+# El dyno no tiene disco persistente: la base local y las subidas no deben subir.
+.venv/
+__pycache__/
+*.pyc
+*.db
+*.db-shm
+*.db-wal
+.pytest_cache/
+.git/
+tests/
+docs/
+*.tar.gz
