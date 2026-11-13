@@ -26,6 +26,7 @@ from fotos import foto
 from importes import formato_importe
 from models import Base, Creator, User, Work
 from seed import SPECIALTIES, seed_database
+from sugerencias import TIMEOUT_SEGUNDOS, crear_sugeridor
 
 
 def politica_csp(app: Flask) -> str:
@@ -316,6 +317,16 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
         correo = CorreoConsola()
     app.extensions["correo"] = correo
 
+    # Sugerencias de ficha con Gemini. Sin GEMINI_API_KEY o sin GEMINI_MODEL queda
+    # desactivado y el botón no se pinta; el modelo no tiene valor por defecto a
+    # propósito, porque los nombres cambian y uno inventado falla en silencio.
+    app.config.setdefault("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY"))
+    app.config.setdefault("GEMINI_MODEL", os.environ.get("GEMINI_MODEL"))
+    app.config.setdefault(
+        "GEMINI_TIMEOUT", os.environ.get("GEMINI_TIMEOUT") or str(TIMEOUT_SEGUNDOS)
+    )
+    app.extensions["sugeridor"] = crear_sugeridor(app.config)
+
     # Stripe Connect. Sin claves de prueba, sin webhook o sin COMMISSION_PERCENT el
     # cobro queda desactivado: no se inventa un porcentaje.
     for variable in (
@@ -466,6 +477,12 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
             "formato_importe": formato_importe,
             "almacen_activo": app.extensions.get("almacen") is not None,
             "almacen_motivo": app.extensions.get("almacen_motivo") or "",
+            "sugerencias_activo": bool(
+                getattr(app.extensions.get("sugeridor"), "activo", False)
+            ),
+            "sugerencias_motivo": getattr(
+                app.extensions.get("sugeridor"), "motivo", ""
+            ) or "",
             "cobro_motivo": motivo_desactivado(app.config),
             "cobro_activo": not motivo_desactivado(app.config),
         }

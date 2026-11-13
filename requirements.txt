@@ -13,3 +13,4 @@ resend==2.53.2
 sentry-sdk==2.75.0
 sqlalchemy==2.1.8
 stripe==17.0.0
+google-genai==3.3.0

@@ -50,6 +50,27 @@
       {{ form.estado() }}
     </div>
 
+    {% if sugerencias_activo %}
+      <div class="campo sugerencias" data-sugerencias
+           data-url="{{ url_for('cuenta.sugerir_ficha') }}">
+        <p class="campo-etiqueta">sugerir la ficha a partir de una foto (opcional)</p>
+        <input type="file" id="sugerencia-foto" accept="image/jpeg,image/png,image/webp">
+        <button class="button button-ghost" type="button" data-sugerir>proponer título y descripción</button>
+        <p class="nota-aviso" data-sugerir-estado role="status" aria-live="polite"></p>
+        <div class="sugerencia-etiquetas" data-sugerir-etiquetas hidden>
+          <p class="campo-etiqueta">etiquetas propuestas</p>
+          <p data-sugerir-lista></p>
+          <button class="button button-ghost" type="button" data-sugerir-anadir>
+            añadir las etiquetas a la descripción
+          </button>
+        </div>
+        <p class="nota-aviso">
+          la foto se envía a Gemini para proponer el texto. La cuota gratuita puede usar
+          los datos para mejorar el modelo: usa solo fotos de demo, no de clientes.
+        </p>
+      </div>
+    {% endif %}
+
     {{ form.enviar(class="button button-primary") }}
   </form>
 
@@ -72,4 +93,10 @@
     </form>
   {% endif %}
 </section>
+{% endblock %}
+
+{% block scripts %}
+  {% if sugerencias_activo %}
+    <script src="{{ url_for('static', filename='js/sugerencias.js') }}" defer></script>
+  {% endif %}
 {% endblock %}

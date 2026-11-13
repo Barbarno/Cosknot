@@ -2,14 +2,27 @@
 
 from __future__ import annotations
 
-from flask import Blueprint, abort, flash, g, redirect, render_template, request, url_for
+from flask import (
+    Blueprint,
+    abort,
+    current_app,
+    flash,
+    g,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
 from flask_login import current_user, login_required
 from sqlalchemy import select
 
+from extensiones import limiter
 from formularios import ObraForm, PerfilForm
 from importes import euros_a_centimos
 from models import Creator, Work
 from seguridad import slug_unico, slugify
+from sugerencias import SugerenciaError
 
 bp = Blueprint("cuenta", __name__, url_prefix="/cuenta")
 
@@ -150,6 +163,47 @@ def editar_obra(obra_id: int) -> str:
         flash("obra actualizada", "ok")
         return redirect(url_for("cuenta.panel"))
     return render_template("obra_form.html", form=form, obra=obra)
+
+
+@bp.route("/obras/sugerencias", methods=["POST"])
+@limiter.limit("10 per hour", methods=["POST"])
+def sugerir_ficha():
+    """Propone título, descripción y etiquetas a partir de la foto elegida.
+
+    La petición es del usuario y va dentro de la petición HTTP, con timeout corto.
+    Sin clave configurada el botón no aparece y aquí se responde 404.
+    """
+    sugeridor = current_app.extensions.get("sugeridor")
+    if sugeridor is None or not sugeridor.activo:
+        return jsonify({"error": "las sugerencias están desactivadas"}), 404
+
+    archivo = request.files.get("foto")
+    if archivo is None or not getattr(archivo, "filename", ""):
+        return jsonify({"error": "elige una foto primero"}), 400
+
+    from almacenamiento import ErrorImagen, validar_imagen
+
+    datos = archivo.read()
+    try:
+        validar_imagen(
+            archivo.filename,
+            archivo.mimetype,
+            datos,
+            int(current_app.config.get("MAX_IMAGE_BYTES") or 5 * 1024 * 1024),
+        )
+    except ErrorImagen as error:
+        return jsonify({"error": str(error)}), 400
+
+    mime = (archivo.mimetype or "").split(";")[0].strip().lower()
+    pista = (request.form.get("pista") or "").strip()
+
+    try:
+        resultado = sugeridor.sugerir(datos, mime, pista)
+    except SugerenciaError as error:
+        codigo = 429 if error.codigo == "cuota" else 502
+        return jsonify({"error": error.mensaje, "codigo": error.codigo}), codigo
+
+    return jsonify({"sugerencia": resultado})
 
 
 @bp.route("/obras/<int:obra_id>/borrar", methods=["POST"])
