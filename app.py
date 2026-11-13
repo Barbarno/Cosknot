@@ -15,12 +15,29 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
 from db import DEFAULT_DATABASE_URL, build_engine, normalize_database_url
+from almacenamiento import crear_almacen, origen_de
 from extensiones import csrf, limiter, login_manager
 from formularios import PedidoForm
+from fotos import foto
 from importes import formato_importe
 from migraciones import aplicar_migraciones
 from models import Base, Creator, User, Work
 from seed import SPECIALTIES, seed_database
+
+
+def politica_csp(app: Flask) -> str:
+    """CSP base; si hay dominio público de imágenes, se abre img-src solo para él."""
+    partes = [
+        "default-src 'self'",
+        "object-src 'none'",
+        "base-uri 'none'",
+        "form-action 'self'",
+        "frame-ancestors 'none'",
+    ]
+    origen = origen_de(app.config.get("R2_PUBLIC_BASE_URL") or "")
+    if origen:
+        partes.append(f"img-src 'self' data: {origen}")
+    return "; ".join(partes)
 
 # Fotos de piezas y talleres sacadas de Wikimedia Commons (licencias libres).
 # La lista es explícita porque cada foto se eligió a mano para que pegue con la
@@ -136,6 +153,7 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
 
     es_sqlite = app.config["DATABASE_URL"].startswith("sqlite")
     es_test = bool(app.config.get("TESTING"))
+    produccion = bool(os.environ.get("RENDER")) and not es_test
 
     app.config.update(
         SESSION_COOKIE_HTTPONLY=True,
@@ -148,6 +166,26 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
     # pasándolos en `config`.
     app.config.setdefault("WTF_CSRF_ENABLED", not es_test)
     app.config.setdefault("RATELIMIT_ENABLED", not es_test)
+
+    # Almacenamiento de imágenes. Sin R2 en producción la subida queda apagada y
+    # la web lo dice; nunca revienta el arranque.
+    app.config.setdefault("UPLOAD_DIR", os.environ.get("UPLOAD_DIR") or "static/uploads")
+    app.config.setdefault("IMAGE_STORAGE", os.environ.get("IMAGE_STORAGE") or "")
+    for variable in (
+        "R2_BUCKET",
+        "R2_ENDPOINT_URL",
+        "R2_ACCESS_KEY_ID",
+        "R2_SECRET_ACCESS_KEY",
+        "R2_PUBLIC_BASE_URL",
+    ):
+        app.config.setdefault(variable, os.environ.get(variable))
+    # Tope global de subida: una petición mayor se corta antes de leer el cuerpo.
+    app.config.setdefault("MAX_CONTENT_LENGTH", 8 * 1024 * 1024)
+    app.config.setdefault("MAX_IMAGE_BYTES", 5 * 1024 * 1024)
+
+    almacen, motivo_almacen = crear_almacen(app.config, produccion=produccion)
+    app.extensions["almacen"] = almacen
+    app.extensions["almacen_motivo"] = motivo_almacen
 
     # En PostgreSQL el esquema lo mueve Alembic, con un advisory lock para que los
     # dos workers de gunicorn no migren a la vez. En SQLite (local y tests) se crea
@@ -175,6 +213,38 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
         with session_factory() as sesion:
             seed_database(sesion)
         print("catálogo sembrado")
+
+    @app.cli.command("migrar-fotos")
+    def migrar_fotos() -> None:
+        """Sube las fotos de static/img al almacén y las enlaza a cada ficha."""
+        from fotos import DIRECTORIO_IMAGENES, nombre_actual
+
+        almacen = app.extensions.get("almacen")
+        if almacen is None:
+            raise click.ClickException(
+                "no hay almacén configurado: " + (app.extensions.get("almacen_motivo") or "")
+            )
+
+        subidas = 0
+        with session_factory() as sesion:
+            for entidad in (
+                *sesion.scalars(select(Creator)).all(),
+                *sesion.scalars(select(Work)).all(),
+            ):
+                if entidad.image_key:
+                    continue
+                nombre = nombre_actual(entidad.slug)
+                if not nombre:
+                    continue
+                ruta = DIRECTORIO_IMAGENES / nombre
+                if not ruta.is_file():
+                    continue
+                clave = f"obras/{nombre}"
+                almacen.guardar(clave, ruta.read_bytes(), "image/jpeg")
+                entidad.image_key = clave
+                subidas += 1
+            sesion.commit()
+        print(f"fotos migradas: {subidas}")
 
     @app.cli.command("hacer-admin")
     @click.argument("email")
@@ -235,9 +305,7 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
             "Permissions-Policy", "geolocation=(), camera=(), microphone=()"
         )
         response.headers.setdefault(
-            "Content-Security-Policy",
-            "default-src 'self'; object-src 'none'; base-uri 'none'; "
-            "form-action 'self'; frame-ancestors 'none'",
+            "Content-Security-Policy", politica_csp(app),
         )
         response.headers.setdefault(
             "Strict-Transport-Security", "max-age=31536000; includeSubDomains"
@@ -254,8 +322,10 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
             "specialties": SPECIALTIES,
             "current_year": 2026,
             "equipo": EQUIPO,
-            "foto": foto_de,
+            "foto": foto,
             "formato_importe": formato_importe,
+            "almacen_activo": app.extensions.get("almacen") is not None,
+            "almacen_motivo": app.extensions.get("almacen_motivo") or "",
         }
 
     @app.route("/")

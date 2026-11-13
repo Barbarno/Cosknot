@@ -37,6 +37,7 @@ solo permite `comprador` y `creador`; un admin se crea con
 | `contact_email` | VARCHAR(200) | no | | correo que sale en el `mailto:` |
 | `accent` | INTEGER | no | | número de paleta visual, por defecto 0 |
 | `verified` | BOOLEAN | no | | creador revisado por el equipo; sale la marca de verificado |
+| `image_key` | VARCHAR(255) | sí | | clave de la foto en el almacén; `NULL` usa la foto de `static/img` |
 | `user_id` | INTEGER | sí | índice único, clave foránea | cuenta que gestiona el taller; `NULL` en los perfiles del seed |
 | `created_at` | DATETIME | no | | fecha de alta, la pone el servidor |
 
@@ -53,6 +54,7 @@ solo permite `comprador` y `creador`; un admin se crea con
 | `price_cents` | INTEGER | sí | | precio real en céntimos, el que se cobra; `NULL` si el taller no lo ha fijado |
 | `currency` | VARCHAR(3) | no | | moneda ISO-4217, por defecto `EUR` |
 | `status` | VARCHAR(40) | no | | disponibilidad, por defecto `disponible` |
+| `image_key` | VARCHAR(255) | sí | | clave de la foto en el almacén; `NULL` usa la foto de `static/img` |
 | `created_at` | DATETIME | no | | fecha de alta, la pone el servidor |
 
 `accent` y `status` tienen valor por defecto en el código, no en la base de datos, así
@@ -162,13 +164,28 @@ Con el catálogo actual, unas pocas decenas de filas, sobra: recorrer la tabla e
 más rápido que mantener un índice de texto. Si el catálogo creciera de golpe, tocaría
 mirar `pg_trgm` o el índice de texto completo de PostgreSQL.
 
+## imágenes
+
+`creators.image_key` y `works.image_key` guardan la clave del objeto en el almacén.
+Si es `NULL`, `fotos.foto()` cae en la foto de `static/img` que toca por slug, así que
+el seed y las fichas antiguas siguen funcionando sin tocar nada.
+
+- **Desarrollo**: `AlmacenLocal` escribe en `UPLOAD_DIR` (por defecto
+  `static/uploads`) y sirve por `/static/uploads/<clave>`.
+- **Producción**: `AlmacenR2` sube a Cloudflare R2 por la API compatible con S3 y
+  devuelve la URL de `R2_PUBLIC_BASE_URL`. Sin las cinco variables de R2 las subidas
+  se desactivan con un aviso y la ficha sigue con la foto antigua.
+- **Validación**: extensión (`.jpg`, `.jpeg`, `.png`, `.webp`), content-type, firma
+  del archivo y tamaño máximo (`MAX_IMAGE_BYTES`, 5 MB por defecto). El tope global
+  de la petición es `MAX_CONTENT_LENGTH`.
+- **CSP**: `img-src` solo se abre al origen de `R2_PUBLIC_BASE_URL`, sin comodines.
+- **Migración de las fotos viejas**: `flask migrar-fotos` sube los ficheros de
+  `static/img` al almacén y rellena `image_key` en cada taller y obra. No toca el
+  seed: si un slug no tiene foto asignada, se queda con la de reserva.
+
 ## lo que falta para producción
 
-- Usuarios y login: hoy no hay. Cualquiera con acceso a la base de datos puede editar
-  el catálogo.
-- Imágenes: las obras son solo texto, sin campo de imagen ni almacenamiento.
-- Moderación: no hay revisión ni denuncias. El contacto es un `mailto:` directo, así
-  que el correo del creador queda a la vista.
+- Moderación: no hay revisión ni denuncias de obras o mensajes.
 
 ## migraciones
 

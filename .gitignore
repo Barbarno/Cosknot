@@ -20,3 +20,6 @@ venv/
 *.tar.gz
 *.bundle
 *.dump
+
+# fotos subidas en local (fase 4). En produccion viven en R2
+static/uploads/

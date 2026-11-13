@@ -14,6 +14,44 @@ from seguridad import slug_unico, slugify
 bp = Blueprint("cuenta", __name__, url_prefix="/cuenta")
 
 
+def _guardar_imagen(archivo, entidad) -> bool:
+    """Valida y sube la foto de una obra o un taller. Devuelve si hubo cambio."""
+    from flask import current_app
+
+    from almacenamiento import ErrorImagen, clave_nueva, validar_imagen
+
+    if archivo is None or not getattr(archivo, "filename", ""):
+        return False
+    almacen = current_app.extensions.get("almacen")
+    if almacen is None:
+        flash(
+            "las subidas están desactivadas en este entorno: "
+            + (current_app.extensions.get("almacen_motivo") or "falta configuración"),
+            "aviso",
+        )
+        return False
+
+    datos = archivo.read()
+    try:
+        extension = validar_imagen(
+            archivo.filename,
+            archivo.mimetype,
+            datos,
+            int(current_app.config.get("MAX_IMAGE_BYTES") or 5 * 1024 * 1024),
+        )
+    except ErrorImagen as error:
+        flash(str(error), "error")
+        return False
+
+    anterior = entidad.image_key
+    clave = clave_nueva(extension)
+    almacen.guardar(clave, datos, archivo.mimetype)
+    entidad.image_key = clave
+    if anterior:
+        almacen.borrar(anterior)
+    return True
+
+
 @bp.before_request
 @login_required
 def exigir_sesion() -> None:
@@ -121,3 +159,24 @@ def borrar_obra(obra_id: int) -> str:
     g.db.commit()
     flash("obra borrada", "ok")
     return redirect(url_for("cuenta.panel"))
+
+
+@bp.route("/perfil/foto", methods=["POST"])
+def subir_foto_perfil() -> str:
+    creador = _perfil_de(current_user)
+    if creador is None:
+        flash("crea primero el perfil del taller", "aviso")
+        return redirect(url_for("cuenta.perfil"))
+    if _guardar_imagen(request.files.get("foto"), creador):
+        g.db.commit()
+        flash("foto del taller actualizada", "ok")
+    return redirect(url_for("cuenta.perfil"))
+
+
+@bp.route("/obras/<int:obra_id>/foto", methods=["POST"])
+def subir_foto_obra(obra_id: int) -> str:
+    obra = _obra_propia(obra_id)
+    if _guardar_imagen(request.files.get("foto"), obra):
+        g.db.commit()
+        flash("foto de la obra actualizada", "ok")
+    return redirect(url_for("cuenta.editar_obra", obra_id=obra.id))

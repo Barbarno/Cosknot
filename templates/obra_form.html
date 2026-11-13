@@ -52,5 +52,24 @@
 
     {{ form.enviar(class="button button-primary") }}
   </form>
+
+  {% if obra %}
+    <form class="foto-form" method="post" action="{{ url_for('cuenta.subir_foto_obra', obra_id=obra.id) }}"
+          enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <p class="campo-etiqueta">foto de la obra</p>
+      <div class="foto-actual">
+        <img src="{{ foto(obra) }}" alt="foto actual de la obra" width="200" height="200" loading="lazy">
+      </div>
+      <div class="campo">
+        <label for="foto">cambiar la foto (jpg, png o webp, máximo 5 MB)</label>
+        <input type="file" id="foto" name="foto" accept="image/jpeg,image/png,image/webp">
+      </div>
+      <button class="button button-ghost" type="submit">subir foto</button>
+      {% if not almacen_activo %}
+        <p class="nota-aviso">{{ almacen_motivo }}</p>
+      {% endif %}
+    </form>
+  {% endif %}
 </section>
 {% endblock %}

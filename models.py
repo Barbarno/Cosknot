@@ -53,6 +53,7 @@ class Creator(Base):
     contact_email: Mapped[str] = mapped_column(String(200))
     accent: Mapped[int] = mapped_column(Integer, default=0)
     verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    image_key: Mapped[str | None] = mapped_column(String(255), nullable=True)
     user_id: Mapped[int | None] = mapped_column(
         ForeignKey("users.id"), nullable=True, unique=True, index=True
     )
@@ -85,6 +86,7 @@ class Work(Base):
         String(3), default="EUR", server_default="EUR", nullable=False
     )
     status: Mapped[str] = mapped_column(String(40), default="disponible")
+    image_key: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     creator: Mapped[Creator] = relationship(back_populates="works")
