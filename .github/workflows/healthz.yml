@@ -1,0 +1,46 @@
+name: salud
+
+# Un GET diario a /healthz, que ya hace SELECT 1 contra la base. Si no responde 200
+# en un minuto, el flujo falla y llega el aviso de GitHub. No necesita claves.
+#
+# El dominio se cambia en una variable del repositorio: SITIO_URL
+# (por ejemplo https://cosknot.es). Sin ella se usa el dominio de Heroku.
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  healthz:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Comprobar /healthz
+        env:
+          SITIO_URL: ${{ vars.SITIO_URL }}
+        run: |
+          set -euo pipefail
+          BASE="${SITIO_URL:-https://${{ secrets.HEROKU_APP_NAME }}.herokuapp.com}"
+          BASE="${BASE%/}"
+          if [ "$BASE" = "https://.herokuapp.com" ]; then
+            echo "falta la variable SITIO_URL o el secreto HEROKU_APP_NAME" >&2
+            exit 1
+          fi
+          URL="$BASE/healthz"
+          for intento in $(seq 1 6); do
+            CODIGO="$(curl -s -o /tmp/healthz.json -w '%{http_code}' --max-time 15 "$URL" || true)"
+            echo "intento $intento: $URL -> $CODIGO"
+            if [ "$CODIGO" = "200" ]; then
+              cat /tmp/healthz.json
+              echo
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "la web no respondió 200 en un minuto" >&2
+          cat /tmp/healthz.json >&2 || true
+          exit 1

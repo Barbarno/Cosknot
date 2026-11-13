@@ -1,59 +1,128 @@
 name: copia de seguridad
 
+# Copia diaria propia, fuera de Heroku: pg_dump cifrado a R2. La copia gestionada
+# de Heroku (pg:backups:schedule) va aparte y no depende de este flujo.
+#
+# Secretos necesarios: HEROKU_API_KEY, HEROKU_APP_NAME, BACKUP_PASSPHRASE,
+# R2_ENDPOINT_URL, R2_BUCKET, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY.
+# Ver docs/backups.md.
+
 on:
   schedule:
-    - cron: '0 3 * * 0'
+    - cron: '0 3 * * *'
   workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: copia
+  cancel-in-progress: false
+
 jobs:
-  backup:
+  copia:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    env:
+      HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+      HEROKU_APP_NAME: ${{ secrets.HEROKU_APP_NAME }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+      R2_ENDPOINT_URL: ${{ secrets.R2_ENDPOINT_URL }}
+      R2_BUCKET: ${{ secrets.R2_BUCKET }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      PYTHONUNBUFFERED: '1'
     steps:
-      - name: Instalar cliente de Postgres si falta
-        run: |
-          set -euo pipefail
-          command -v pg_dump || (sudo apt-get update -qq && sudo apt-get install -y postgresql-client)
+      - uses: actions/checkout@v4
 
-      # NEON_DATABASE_URL tiene que ser la cadena sin -pooler: pg_dump necesita
-      # conectar directamente, no a través del pooler.
-      - name: pg_dump a formato custom
-        env:
-          NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Instalar boto3
+        run: pip install --disable-pip-version-check "boto3==1.44.2"
+
+      - name: Comprobar secretos
         run: |
           set -euo pipefail
-          DUMP="cosknot-db-${{ github.run_number }}.dump"
-          pg_dump --no-owner --no-privileges --format=custom -f "$DUMP" "$NEON_DATABASE_URL"
-          SIZE=$(stat -c%s "$DUMP")
-          echo "tamaño del dump: $SIZE bytes"
-          if [ "$SIZE" -lt 1024 ]; then
-            echo "dump de $SIZE bytes: conexión mala o base vacía" >&2
+          for nombre in HEROKU_API_KEY HEROKU_APP_NAME BACKUP_PASSPHRASE \
+                        R2_ENDPOINT_URL R2_BUCKET R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY; do
+            if [ -z "${!nombre:-}" ]; then
+              echo "falta el secreto $nombre" >&2
+              exit 1
+            fi
+          done
+
+      # La cadena de la base no se guarda en GitHub: se pide a Heroku en tiempo de
+      # ejecución, así que una rotación de credenciales no rompe la copia.
+      - name: Obtener DATABASE_URL de Heroku
+        run: |
+          set -euo pipefail
+          command -v heroku >/dev/null || { echo "falta la CLI de heroku en el runner" >&2; exit 1; }
+          URL="$(heroku config:get DATABASE_URL -a "$HEROKU_APP_NAME")"
+          if [ -z "$URL" ]; then
+            echo "heroku no devolvió DATABASE_URL para $HEROKU_APP_NAME" >&2
             exit 1
           fi
+          # sslmode=require: el addon lo exige y psycopg no lo añade solo.
+          case "$URL" in
+            *sslmode=*) ;;
+            *\?*) URL="$URL&sslmode=require" ;;
+            *) URL="$URL?sslmode=require" ;;
+          esac
+          echo "::add-mask::$URL"
+          echo "DATABASE_URL=$URL" >> "$GITHUB_ENV"
 
-      # el artefacto lo puede descargar cualquiera con cuenta de github, así que
-      # el dump no se sube en claro: se cifra aquí y el fichero plano se borra.
-      - name: Cifrar el dump
-        env:
-          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+      # El cliente tiene que ser de versión mayor o igual que el servidor. Se lee la
+      # versión del servidor y, si el cliente del runner se queda corto, se instala
+      # el paquete que toca desde PGDG; si tampoco así, se falla con el motivo.
+      - name: Ajustar la versión del cliente de Postgres
         run: |
           set -euo pipefail
-          if [ -z "${BACKUP_PASSPHRASE:-}" ]; then
-            echo "falta BACKUP_PASSPHRASE" >&2
+          if ! command -v psql >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq postgresql-client
+          fi
+          SERVIDOR="$(psql "$DATABASE_URL" -tAc 'show server_version' | cut -d. -f1 | tr -d ' ')"
+          CLIENTE="$(pg_dump --version | sed -E 's/.* ([0-9]+).*/\1/')"
+          echo "servidor PostgreSQL $SERVIDOR, pg_dump $CLIENTE"
+          if [ "$CLIENTE" -lt "$SERVIDOR" ]; then
+            echo "el cliente ($CLIENTE) es más viejo que el servidor ($SERVIDOR): instalo postgresql-client-$SERVIDOR" >&2
+            sudo install -d /usr/share/postgresql-common/pgdg
+            sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+              https://www.postgresql.org/media/keys/ACCC4CF8.asc
+            echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+              | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq "postgresql-client-$SERVIDOR"
+            CLIENTE="$(pg_dump --version | sed -E 's/.* ([0-9]+).*/\1/')"
+          fi
+          if [ "$CLIENTE" -lt "$SERVIDOR" ]; then
+            echo "no se pudo igualar el cliente ($CLIENTE) al servidor ($SERVIDOR)" >&2
             exit 1
           fi
-          DUMP="cosknot-db-${{ github.run_number }}.dump"
+          echo "PG_MAJOR=$CLIENTE" >> "$GITHUB_ENV"
+
+      - name: Volcar y cifrar
+        run: |
+          set -euo pipefail
+          COPIAS="$(mktemp -d)"
+          DUMP="$COPIAS/cosknot.dump"
+          pg_dump --format=custom --no-owner --no-privileges -f "$DUMP" "$DATABASE_URL"
+          TAMANO="$(stat -c%s "$DUMP")"
+          echo "dump de $TAMANO bytes"
+          if [ "$TAMANO" -lt 1024 ]; then
+            echo "el dump ocupa $TAMANO bytes: conexión mala o base vacía" >&2
+            exit 1
+          fi
           openssl enc -aes-256-cbc -pbkdf2 -salt \
             -in "$DUMP" -out "$DUMP.enc" -pass env:BACKUP_PASSPHRASE
           rm -f "$DUMP"
-          echo "dump cifrado: $(stat -c%s "$DUMP.enc") bytes"
+          echo "COPIAS=$COPIAS" >> "$GITHUB_ENV"
 
-      - name: Subir artefacto
-        uses: actions/upload-artifact@v4
-        with:
-          name: cosknot-db-${{ github.run_number }}
-          path: cosknot-db-${{ github.run_number }}.dump.enc
-          retention-days: 30
+      - name: Subir a R2 y borrar las de más de 30 días
+        run: |
+          set -euo pipefail
+          python scripts/copias.py subir "$COPIAS/cosknot.dump.enc"
+          python scripts/copias.py purgar --dias 30
+          rm -rf "$COPIAS"

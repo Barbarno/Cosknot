@@ -38,6 +38,14 @@ Ya no se usan artefactos de GitHub. El repositorio es público y cualquiera con
 cuenta puede descargar un artefacto; el bucket de R2 es privado y el dump va
 cifrado igualmente.
 
+La subida y la purga están en `scripts/copias.py`, así que también se pueden lanzar
+a mano:
+
+```bash
+python scripts/copias.py subir copia.dump.enc   # deja copias/cosknot-AAAAMMDD-HHMMSS.dump.enc
+python scripts/copias.py purgar --dias 30       # borra lo que pase de 30 días
+```
+
 ```bash
 # lo mismo que hace el flujo, a mano
 pg_dump --format=custom --no-owner --no-privileges -f cosknot.dump "$DATABASE_URL"
@@ -50,6 +58,7 @@ rm -f cosknot.dump
 
 ```bash
 gh secret set HEROKU_API_KEY
+gh secret set HEROKU_APP_NAME
 gh secret set BACKUP_PASSPHRASE
 gh secret set R2_ENDPOINT_URL
 gh secret set R2_BUCKET
@@ -59,6 +68,9 @@ gh secret set R2_SECRET_ACCESS_KEY
 
 - `HEROKU_API_KEY`: cuenta de Heroku → **Account settings** → **API Key**. Solo se
   muestra una vez.
+- `HEROKU_APP_NAME`: nombre de la app (el que sale en `heroku apps`). El flujo lo
+  usa para pedir `DATABASE_URL` en tiempo de ejecución y para el sondeo de
+  `/healthz`.
 - `BACKUP_PASSPHRASE`: la contraseña con la que se cifra el dump. Sin ella las
   copias son inservibles, así que vive en dos sitios: el secreto del repositorio y
   un gestor de contraseñas.
@@ -78,6 +90,20 @@ de la siguiente copia programada.
 
 ## restaurar una copia
 
+El script hace los tres pasos (bajar, descifrar, `pg_restore`) y comprueba que el
+fichero descifrado empieza por `PGDMP`:
+
+```bash
+python scripts/restaurar_copia.py --listar          # copias disponibles en R2
+python scripts/restaurar_copia.py copias/cosknot-20261113-030000.dump.enc \
+  --destino "postgresql://localhost/cosknot_prueba"
+```
+
+Sin `--destino` usa `DATABASE_URL` del entorno. Antes de restaurar sobre
+producción, para la web: `heroku ps:scale web=0` y luego `heroku ps:scale web=1`.
+
+A mano, es lo mismo:
+
 ```bash
 openssl enc -d -aes-256-cbc -pbkdf2 \
   -in copia.dump.enc -out copia.dump \
@@ -86,8 +112,7 @@ pg_restore --clean --no-owner --no-privileges -d "$DATABASE_URL" copia.dump
 ```
 
 `--clean` borra los objetos antes de recrearlos, así que la restauración deja la
-base exactamente como estaba en la copia. Sobre la base de producción se lanza con
-la web parada: `heroku ps:scale web=0`, restaurar, `heroku ps:scale web=1`.
+base exactamente como estaba en la copia.
 
 La cabecera de un dump sin cifrar son los bytes `PGDMP`; si el fichero empieza por
 `Salted__` es que sigue cifrado.
@@ -129,6 +154,13 @@ mes:
 Si los conteos de `works` y `users` coinciden con producción, la copia sirve. Si la
 restauración falla o los números no cuadran, la copia del día no vale y el flujo de
 `backup.yml` es lo primero que hay que mirar.
+
+## sondeo diario de salud
+
+`healthz.yml` hace un `GET /healthz` al día y falla si no responde 200 en un minuto.
+La ruta ya ejecuta `SELECT 1`, así que un 200 significa app y base vivas. El destino
+sale de la variable del repositorio `SITIO_URL` (`gh variable set SITIO_URL --body
+https://cosknot.es`); si falta, usa `https://<HEROKU_APP_NAME>.herokuapp.com`.
 
 ## fallos que ya me han pasado
 
