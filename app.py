@@ -135,7 +135,49 @@ def debe_sembrar(url: str, seed_on_start: str | None) -> bool:
     return url.startswith("sqlite") or seed_on_start == "1"
 
 
+def configurar_registro(nivel: str | None = None) -> None:
+    """Nivel de log por variable de entorno; por defecto INFO."""
+    import logging
+
+    nombre = (nivel or os.environ.get("LOG_LEVEL") or "INFO").strip().upper()
+    valor = getattr(logging, nombre, None)
+    if not isinstance(valor, int):
+        valor = logging.INFO
+    logging.basicConfig(
+        level=valor,
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    )
+    logging.getLogger().setLevel(valor)
+
+
+def configurar_sentry(app: Flask) -> bool:
+    """Sentry solo si hay SENTRY_DSN. Sin DSN no se inicializa nada."""
+    dsn = (os.environ.get("SENTRY_DSN") or "").strip()
+    if not dsn or app.config.get("TESTING"):
+        return False
+    if app.extensions.get("sentry_iniciado"):
+        return True
+
+    import sentry_sdk
+
+    muestra = os.environ.get("SENTRY_TRACES_SAMPLE_RATE") or "0"
+    try:
+        tasa = float(muestra)
+    except ValueError:
+        tasa = 0.0
+
+    sentry_sdk.init(
+        dsn=dsn,
+        environment=os.environ.get("SENTRY_ENVIRONMENT") or "production",
+        traces_sample_rate=tasa,
+        send_default_pii=False,
+    )
+    app.extensions["sentry_iniciado"] = True
+    return True
+
+
 def create_app(config: dict[str, Any] | None = None) -> Flask:
+    configurar_registro()
     app = Flask(__name__)
     app.config.from_mapping(
         DATABASE_URL=normalize_database_url(os.environ.get("DATABASE_URL")),
@@ -206,6 +248,7 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
     app.config.setdefault(
         "EMAIL_ASYNC", (os.environ.get("EMAIL_ASYNC") or "1") != "0" and not es_test
     )
+    configurar_sentry(app)
     correo = crear_correo(app.config)
     if correo.nombre == "desactivado" and not produccion:
         correo = CorreoConsola()

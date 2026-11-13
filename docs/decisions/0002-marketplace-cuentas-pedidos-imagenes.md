@@ -47,6 +47,14 @@ después se transfiere la parte del taller, así que la disputa la atiende la pl
 y un saldo negativo en la cuenta conectada lo cubre la plataforma. Por eso el alta es
 express (Stripe hace el KYC) y el cobro solo se activa con claves de pruebas.
 
+## registro y errores
+
+`LOG_LEVEL` fija el nivel del logger raíz (por defecto `INFO`). Sentry solo se
+inicializa si existe `SENTRY_DSN` y la app no está en pruebas; el muestreo de trazas
+sale de `SENTRY_TRACES_SAMPLE_RATE` y por defecto es 0, así que solo se envían errores.
+`send_default_pii=False`. `/healthz` no cambia: sigue devolviendo `{"status": "ok"}` o
+503 si la base no contesta.
+
 ## csp y la redirección a checkout
 
 `form-action 'self'` puede bloquear la redirección posterior a un POST si el navegador
