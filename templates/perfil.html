@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}{% if creador %}editar perfil{% else %}crear perfil{% endif %} - cosknot{% endblock %}
+
+{% block content %}
+<section class="form-card">
+  <h1>{% if creador %}perfil del taller{% else %}crear el perfil del taller{% endif %}</h1>
+  <p class="form-intro">esto es lo que ve un comprador en tu ficha pública.</p>
+
+  <form method="post" novalidate>
+    {{ form.hidden_tag() }}
+
+    <div class="campo">
+      {{ form.nombre.label }}
+      {{ form.nombre() }}
+      {% if form.nombre.errors %}
+        <ul class="errores">{% for error in form.nombre.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+      {% endif %}
+    </div>
+
+    <div class="campo">
+      {{ form.especialidad.label }}
+      {{ form.especialidad() }}
+    </div>
+
+    <div class="campo">
+      {{ form.ubicacion.label }}
+      {{ form.ubicacion() }}
+      {% if form.ubicacion.errors %}
+        <ul class="errores">{% for error in form.ubicacion.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+      {% endif %}
+    </div>
+
+    <div class="campo">
+      {{ form.bio.label }}
+      {{ form.bio(rows=6) }}
+      {% if form.bio.errors %}
+        <ul class="errores">{% for error in form.bio.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+      {% endif %}
+    </div>
+
+    <div class="campo">
+      {{ form.contacto.label }}
+      {{ form.contacto(inputmode="email") }}
+      {% if form.contacto.errors %}
+        <ul class="errores">{% for error in form.contacto.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+      {% endif %}
+    </div>
+
+    {{ form.enviar(class="button button-primary") }}
+  </form>
+</section>
+{% endblock %}

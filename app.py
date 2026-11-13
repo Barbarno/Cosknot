@@ -8,14 +8,16 @@ import hashlib
 from typing import Any
 from xml.sax.saxutils import escape
 
+import click
 from flask import Flask, Response, g, render_template, request, url_for
 from sqlalchemy import func, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
 from db import DEFAULT_DATABASE_URL, build_engine, normalize_database_url
+from extensiones import csrf, limiter, login_manager
 from migraciones import aplicar_migraciones
-from models import Base, Creator, Work
+from models import Base, Creator, User, Work
 from seed import SPECIALTIES, seed_database
 
 # Fotos de piezas y talleres sacadas de Wikimedia Commons (licencias libres).
@@ -133,6 +135,18 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
     es_sqlite = app.config["DATABASE_URL"].startswith("sqlite")
     es_test = bool(app.config.get("TESTING"))
 
+    app.config.update(
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SAMESITE="Lax",
+        # Secure solo cuando la web va por https: en local (http) el navegador no
+        # enviaría la cookie y no se podría entrar.
+        SESSION_COOKIE_SECURE=bool(os.environ.get("RENDER")) and not es_test,
+    )
+    # En tests se desactivan por defecto; una prueba puede volver a activarlos
+    # pasándolos en `config`.
+    app.config.setdefault("WTF_CSRF_ENABLED", not es_test)
+    app.config.setdefault("RATELIMIT_ENABLED", not es_test)
+
     # En PostgreSQL el esquema lo mueve Alembic, con un advisory lock para que los
     # dos workers de gunicorn no migren a la vez. En SQLite (local y tests) se crea
     # con create_all: es instantáneo, idempotente y no hay despliegue que coordinar.
@@ -160,6 +174,22 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
             seed_database(sesion)
         print("catálogo sembrado")
 
+    @app.cli.command("hacer-admin")
+    @click.argument("email")
+    def hacer_admin(email: str) -> None:
+        """Marca como admin la cuenta con ese correo (debe existir ya)."""
+        from seguridad import normalizar_email
+
+        with session_factory() as sesion:
+            usuario = sesion.scalar(
+                select(User).where(User.email == normalizar_email(email))
+            )
+            if usuario is None:
+                raise click.ClickException(f"no hay ninguna cuenta con {email}")
+            usuario.role = "admin"
+            sesion.commit()
+        print(f"{email} es admin")
+
     @app.before_request
     def open_session() -> None:
         g.db = session_factory()
@@ -169,6 +199,28 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
         session: Session | None = g.pop("db", None)
         if session is not None:
             session.close()
+
+    csrf.init_app(app)
+    limiter.init_app(app)
+    login_manager.init_app(app)
+
+    @login_manager.user_loader
+    def cargar_usuario(user_id: str) -> User | None:
+        sesion: Session | None = getattr(g, "db", None)
+        if sesion is None:
+            return None
+        try:
+            return sesion.get(User, int(user_id))
+        except (TypeError, ValueError):
+            return None
+
+    from admin import bp as admin_bp
+    from auth import bp as auth_bp
+    from cuenta import bp as cuenta_bp
+
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(cuenta_bp)
+    app.register_blueprint(admin_bp)
 
     @app.after_request
     def cabeceras_de_seguridad(response: Response) -> Response:

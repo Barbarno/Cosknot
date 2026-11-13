@@ -5,12 +5,23 @@ accesorios, y un comprador los mira, los compra o pide un encargo. De momento el
 solo guarda el escaparate, que son las dos tablas de abajo. Compras, encargos y pagos
 todavía no tienen tabla.
 
-Hay dos tablas, definidas en `models.py` con SQLAlchemy 2.x. No hay más tablas ni
-migraciones.
+Hay tres tablas, definidas en `models.py` con SQLAlchemy 2.x: `users`, `creators` y
+`works`.
 
-El esquema se crea al arrancar con `Base.metadata.create_all(engine)` dentro de
-`create_app()`. En local el motor es SQLite (`sqlite:///cosknot.db`); en producción,
-PostgreSQL en Neon.
+## tabla `users`
+
+| columna | tipo | nulo | clave o índice | qué es |
+|---|---|---|---|---|
+| `id` | INTEGER | no | clave primaria | identificador interno |
+| `email` | VARCHAR(200) | no | único e indexado | correo con el que se entra; se guarda en minúsculas |
+| `password_hash` | VARCHAR(255) | no | | hash argon2id; nunca la contraseña |
+| `role` | VARCHAR(20) | no | indexado | `comprador`, `creador` o `admin` |
+| `created_at` | DATETIME | no | | fecha de alta, la pone el servidor |
+
+Los roles no son una tabla: `models.ROLES` los enumera y el código comprueba el
+valor. `admin` puede además publicar obras y verificar talleres. El registro público
+solo permite `comprador` y `creador`; un admin se crea con
+`flask hacer-admin <correo>`.
 
 ## tabla `creators`
 
@@ -25,6 +36,7 @@ PostgreSQL en Neon.
 | `contact_email` | VARCHAR(200) | no | | correo que sale en el `mailto:` |
 | `accent` | INTEGER | no | | número de paleta visual, por defecto 0 |
 | `verified` | BOOLEAN | no | | creador revisado por el equipo; sale la marca de verificado |
+| `user_id` | INTEGER | sí | índice único, clave foránea | cuenta que gestiona el taller; `NULL` en los perfiles del seed |
 | `created_at` | DATETIME | no | | fecha de alta, la pone el servidor |
 
 ## tabla `works`
@@ -50,6 +62,23 @@ Un creador tiene varias obras. `works.creator_id` apunta a `creators.id` y la re
 está declarada en los dos sentidos con `back_populates` (`Creator.works` y
 `Work.creator`). `Creator.works` ordena por `Work.id`.
 
+Un usuario puede tener como mucho un taller: `creators.user_id` es único y puede ser
+`NULL`. Los perfiles que crea el seed no tienen cuenta detrás; los que se crean desde
+`/cuenta/perfil` sí. El borrado en cascada es solo del ORM, así que borrar un
+`User` desde SQL no borra su `Creator`: primero se pone `user_id` a `NULL` o se
+borra el taller desde la sesión.
+
+## roles
+
+- `comprador`: puede navegar y (a partir de la fase 3) hacer pedidos.
+- `creador`: además tiene taller y puede crear, editar y borrar sus obras.
+- `admin`: todo lo del creador más `/admin/creadores`, donde marca talleres como
+  verificados.
+
+Las rutas de `/cuenta` exigen sesión con `@login_required`; las de `/admin` además
+comprueban `current_user.is_admin` y devuelven 403 si no lo es. Un creador solo
+puede tocar obras cuyo `creator.user_id` sea el suyo; el resto da 403.
+
 El borrado en cascada es solo del ORM: `Creator.works` tiene
 `cascade="all, delete-orphan"`, así que si borro un creador desde una sesión de
 SQLAlchemy se borran sus obras. La clave foránea no lleva `ondelete`, así que un
@@ -58,7 +87,7 @@ alguna vez hace falta borrar, se hace desde el ORM o se añade `ondelete="CASCAD
 
 ## reglas que aplica el código
 
-- `slug` es único en las dos tablas. Es lo que buscan las rutas de detalle; si no
+- `slug` es único en `creators` y `works`. Es lo que buscan las rutas de detalle; si no
   existe, la ruta devuelve el 404 propio.
 - Longitudes máximas: `creators.slug` y `name` 120, `specialty` 40, `location` 120,
   `contact_email` 200, `works.slug` 140, `title` 160, `price_note` 80, `status` 40.
@@ -70,8 +99,9 @@ alguna vez hace falta borrar, se hace desde el ORM o se añade `ondelete="CASCAD
   verificados; el valor por defecto es `False`.
 - `status` también es texto libre. En el seed uso `disponible`, `encargo` y `agotado`.
 - `price_note` puede ser `NULL`; la plantilla muestra «a consultar».
-- No hay validación del correo: cualquier cadena de hasta 200 caracteres se acepta y
-  se publica tal cual en el `mailto:`.
+- El correo de registro y el de contacto del taller se validan con el validador
+  `Email` de WTForms; la contraseña exige 8 caracteres como mínimo y se guarda como
+  hash argon2id. `users.email` se normaliza a minúsculas antes de guardar.
 
 ## búsqueda
 

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}administración - cosknot{% endblock %}
+
+{% block content %}
+<section class="panel">
+  <div class="panel-head">
+    <h1>creadores</h1>
+    <a class="button button-ghost" href="{{ url_for('cuenta.panel') }}">volver a mi cuenta</a>
+  </div>
+
+  <table class="tabla-obras">
+    <thead>
+      <tr>
+        <th>taller</th>
+        <th>especialidad</th>
+        <th>ubicación</th>
+        <th>estado</th>
+        <th>acción</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for creador in creadores %}
+        <tr>
+          <td><a href="{{ url_for('creator_detail', slug=creador.slug) }}">{{ creador.name }}</a></td>
+          <td>{{ creador.specialty }}</td>
+          <td>{{ creador.location }}</td>
+          <td>{% if creador.verified %}verificado{% else %}sin verificar{% endif %}</td>
+          <td>
+            <form method="post" action="{{ url_for('admin.verificar', creador_id=creador.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="enlace-boton" type="submit">
+                {% if creador.verified %}quitar verificación{% else %}verificar{% endif %}
+              </button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

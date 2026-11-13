@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}crear cuenta - cosknot{% endblock %}
+
+{% block content %}
+<section class="form-card">
+  <h1>crear cuenta</h1>
+  <p class="form-intro">una cuenta para comprar piezas o para publicar las tuyas.</p>
+
+  <form method="post" action="{{ url_for('auth.registro') }}" novalidate>
+    {{ form.hidden_tag() }}
+
+    <div class="campo">
+      {{ form.email.label }}
+      {{ form.email(autocomplete="email", inputmode="email") }}
+      {% if form.email.errors %}
+        <ul class="errores">{% for error in form.email.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+      {% endif %}
+    </div>
+
+    <div class="campo">
+      {{ form.password.label }}
+      {{ form.password(autocomplete="new-password") }}
+      {% if form.password.errors %}
+        <ul class="errores">{% for error in form.password.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+      {% endif %}
+    </div>
+
+    <div class="campo">
+      {{ form.confirmar.label }}
+      {{ form.confirmar(autocomplete="new-password") }}
+      {% if form.confirmar.errors %}
+        <ul class="errores">{% for error in form.confirmar.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+      {% endif %}
+    </div>
+
+    <div class="campo">
+      <label>{{ form.rol.label.text }}</label>
+      <div class="campo-radio">
+        {% for opcion in form.rol %}
+          <label>{{ opcion() }} {{ opcion.label.text }}</label>
+        {% endfor %}
+      </div>
+    </div>
+
+    {{ form.enviar(class="button button-primary") }}
+  </form>
+
+  <p class="form-footer">
+    ¿ya tienes cuenta? <a href="{{ url_for('auth.entrar') }}">entrar</a>
+  </p>
+</section>
+{% endblock %}

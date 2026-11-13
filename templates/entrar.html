@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}entrar - cosknot{% endblock %}
+
+{% block content %}
+<section class="form-card">
+  <h1>entrar</h1>
+  <p class="form-intro">accede a tu cuenta para gestionar pedidos y obras.</p>
+
+  <form method="post" action="{{ url_for('auth.entrar', next=request.args.get('next')) }}" novalidate>
+    {{ form.hidden_tag() }}
+
+    <div class="campo">
+      {{ form.email.label }}
+      {{ form.email(autocomplete="email", inputmode="email") }}
+      {% if form.email.errors %}
+        <ul class="errores">{% for error in form.email.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+      {% endif %}
+    </div>
+
+    <div class="campo">
+      {{ form.password.label }}
+      {{ form.password(autocomplete="current-password") }}
+      {% if form.password.errors %}
+        <ul class="errores">{% for error in form.password.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+      {% endif %}
+    </div>
+
+    {{ form.enviar(class="button button-primary") }}
+  </form>
+
+  <p class="form-footer">
+    ¿todavía no tienes cuenta? <a href="{{ url_for('auth.registro') }}">crear una</a>
+  </p>
+</section>
+{% endblock %}

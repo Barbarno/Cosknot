@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}mi cuenta - cosknot{% endblock %}
+
+{% block content %}
+<section class="panel">
+  <div class="panel-head">
+    <h1>mi cuenta</h1>
+    <div class="panel-actions">
+      {% if current_user.is_creator %}
+        {% if perfil %}
+          <a class="button button-primary" href="{{ url_for('cuenta.nueva_obra') }}">publicar obra</a>
+        {% endif %}
+        <a class="button button-ghost" href="{{ url_for('cuenta.perfil') }}">
+          {% if perfil %}editar perfil{% else %}crear perfil de taller{% endif %}
+        </a>
+      {% endif %}
+      {% if current_user.is_admin %}
+        <a class="button button-ghost" href="{{ url_for('admin.creadores') }}">administración</a>
+      {% endif %}
+      <form method="post" action="{{ url_for('auth.salir') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="button button-ghost" type="submit">cerrar sesión</button>
+      </form>
+    </div>
+  </div>
+
+  <p class="perfil-resumen">
+    {{ current_user.email }} · rol: {{ current_user.role }}
+    {% if perfil %}
+      · taller: <a href="{{ url_for('creator_detail', slug=perfil.slug) }}">{{ perfil.name }}</a>
+      {% if perfil.verified %}· verificado{% else %}· pendiente de verificar{% endif %}
+    {% endif %}
+  </p>
+
+  {% if current_user.is_creator and not perfil %}
+    <p class="vacio">
+      antes de publicar hace falta el perfil del taller: nombre, especialidad y bio.
+      <a href="{{ url_for('cuenta.perfil') }}">crear perfil</a>
+    </p>
+  {% elif perfil %}
+    {% if obras %}
+      <table class="tabla-obras">
+        <thead>
+          <tr>
+            <th>obra</th>
+            <th>estado</th>
+            <th>precio</th>
+            <th>acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for obra in obras %}
+            <tr>
+              <td><a href="{{ url_for('work_detail', slug=obra.slug) }}">{{ obra.title }}</a></td>
+              <td>{{ obra.status }}</td>
+              <td>{{ obra.price_note or "a consultar" }}</td>
+              <td>
+                <a href="{{ url_for('cuenta.editar_obra', obra_id=obra.id) }}">editar</a>
+                <form method="post" action="{{ url_for('cuenta.borrar_obra', obra_id=obra.id) }}"
+                      onsubmit="return confirm('¿borrar esta obra?');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button class="enlace-boton" type="submit">borrar</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="vacio">todavía no has publicado ninguna obra.</p>
+    {% endif %}
+  {% else %}
+    <p class="vacio">tu cuenta es de comprador. aquí verás tus pedidos.</p>
+  {% endif %}
+</section>
+{% endblock %}
