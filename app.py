@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from db import DEFAULT_DATABASE_URL, build_engine, normalize_database_url
 from almacenamiento import crear_almacen, origen_de
+from busqueda import buscar_creadores, buscar_obras
 from correo import CorreoConsola, crear_correo
 from pagos import motivo_desactivado
 from extensiones import csrf, limiter, login_manager
@@ -397,26 +398,8 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
         creadores: list[Creator] = []
         obras: list[Work] = []
         if consulta:
-            patron = f"%{consulta}%"
-            creadores = list(
-                g.db.scalars(
-                    select(Creator)
-                    .where(
-                        Creator.name.ilike(patron)
-                        | Creator.bio.ilike(patron)
-                        | Creator.location.ilike(patron)
-                        | Creator.specialty.ilike(patron)
-                    )
-                    .order_by(Creator.name)
-                ).all()
-            )
-            obras = list(
-                g.db.scalars(
-                    select(Work)
-                    .where(Work.title.ilike(patron) | Work.description.ilike(patron))
-                    .order_by(Work.id.desc())
-                ).all()
-            )
+            creadores = buscar_creadores(g.db, consulta)
+            obras = buscar_obras(g.db, consulta)
         return render_template(
             "buscar.html", consulta=consulta, creadores=creadores, obras=obras
         )

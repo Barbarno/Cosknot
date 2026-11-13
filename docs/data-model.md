@@ -159,15 +159,20 @@ alguna vez hace falta borrar, se hace desde el ORM o se añade `ondelete="CASCAD
 
 ## búsqueda
 
-`/buscar?q=` no usa índices dedicados ni tabla aparte. Es un `ILIKE` con el patrón
-`%texto%` sobre `creators.name`, `creators.bio`, `creators.location` y
-`creators.specialty`, y lo mismo sobre `works.title` y `works.description`. Luego la
-plantilla pinta los dos bloques de resultados. En SQLite el `ILIKE` acaba en un `LIKE`,
-que solo ignora mayúsculas en ASCII.
+`/buscar?q=` tiene dos caminos en `busqueda.py`, elegidos por el dialecto de la sesión:
 
-Con el catálogo actual, unas pocas decenas de filas, sobra: recorrer la tabla entera es
-más rápido que mantener un índice de texto. Si el catálogo creciera de golpe, tocaría
-mirar `pg_trgm` o el índice de texto completo de PostgreSQL.
+- **PostgreSQL**: texto completo en español. `to_tsvector('spanish', ...)` sobre
+  `creators.name`, `creators.bio`, `creators.location` y `creators.specialty` (y sobre
+  `works.title` y `works.description`), contra `plainto_tsquery('spanish', ...)`, con
+  `ts_rank` para ordenar. Los índices GIN de la migración `0006` cubren exactamente esa
+  expresión, con literales, para que el planificador los use.
+- **SQLite**: `ILIKE` con el patrón `%texto%` sobre los mismos campos. Es el motor de
+  desarrollo y de las pruebas, y solo ignora mayúsculas en ASCII.
+
+La ruta no cambia: pide los resultados a `buscar_creadores()` y `buscar_obras()`. El
+stemmer español hace que «capas» encuentre «capa»; en SQLite eso no pasa y hay que
+escribir la palabra tal cual.
+
 
 ## imágenes
 
