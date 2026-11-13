@@ -8,10 +8,10 @@ __pycache__/
 venv/
 .pytest_cache/
 
-# entorno local: esto no se sube nunca, la DATABASE_URL real vive en el panel de Render
+# entorno local: esto no se sube nunca, la DATABASE_URL real vive en los config vars de Heroku
 .env
 
-# bases de datos sqlite locales. En Render el disco es efímero y la base real está en Neon
+# bases de datos sqlite locales. En Heroku el disco es efímero y la base real está en Heroku Postgres
 *.db
 *.sqlite
 *.sqlite3

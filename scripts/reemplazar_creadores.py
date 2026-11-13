@@ -1,8 +1,8 @@
 """Borra el catálogo actual y lo vuelve a sembrar desde `seed.py`.
 
 Sirve para actualizar los creadores de una base de datos que ya tiene datos,
-por ejemplo la de Neon. Sin argumentos usa `DATABASE_URL`; si no está definida,
-falla.
+por ejemplo la de Heroku Postgres. Sin argumentos usa `DATABASE_URL`; si no está
+definida, falla.
 
     DATABASE_URL="postgresql://usuario:clave@host/base" python scripts/reemplazar_creadores.py
 """
@@ -36,9 +36,9 @@ def main() -> None:
     url = url_de_entorno()
     opciones = {}
     if url.startswith("postgresql"):
-        # Neon va por el pooler en modo transacción: sin caché de prepared statements.
+        # Heroku Postgres solo acepta TLS y la URL se lee del entorno en cada uso.
         opciones = {
-            "connect_args": {"sslmode": "require", "prepare_threshold": None},
+            "connect_args": {"sslmode": "require"},
             "pool_pre_ping": True,
         }
 

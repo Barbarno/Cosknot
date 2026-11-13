@@ -1,6 +1,6 @@
 """Envío de correo.
 
-Resend por HTTP, nunca SMTP: Render free bloquea las salidas a 25, 465 y 587.
+Resend por HTTP, nunca SMTP: Heroku bloquea las salidas a 25, 465 y 587.
 
 Hay dos backends con la misma interfaz:
 
@@ -11,12 +11,15 @@ Hay dos backends con la misma interfaz:
 `crear_correo()` decide cuál toca. Si falta la clave, el correo queda desactivado
 con un motivo y la web sigue funcionando: un aviso que no sale no puede tumbar un
 pedido.
+
+El envío se intenta dentro de la petición con un timeout corto. Si falla, quien
+llama deja el aviso en `email_outbox` (`outbox.py`) y el hilo del proceso web lo
+reintenta. `EMAIL_ASYNC=0` desactiva ese respaldo: solo se intenta una vez.
 """
 
 from __future__ import annotations
 
 import logging
-import threading
 from typing import Any
 
 registro = logging.getLogger(__name__)
@@ -114,17 +117,13 @@ def crear_correo(config: dict[str, Any]) -> Correo:
     return CorreoResend(clave, remitente, responder_a)
 
 
-def enviar(correo: Correo, para: str, asunto: str, texto: str, sincrono: bool) -> None:
-    """Envía en un hilo aparte para no meter la latencia de Resend en la petición."""
+def enviar(correo: Correo, para: str, asunto: str, texto: str) -> bool:
+    """Intenta el envío dentro de la petición y devuelve si salió.
+
+    El timeout de Resend es de 5 s, así que el peor caso de un fallo son 5 s de
+    espera. Quien llama decide qué hacer con el `False`: `pedidos._avisar` deja el
+    aviso en `email_outbox` para que el hilo lo reintente.
+    """
     if not para:
-        return
-    if sincrono or not correo.activo:
-        correo.enviar(para, asunto, texto)
-        return
-    hilo = threading.Thread(
-        target=correo.enviar,
-        args=(para, asunto, texto),
-        name="correo",
-        daemon=True,
-    )
-    hilo.start()
+        return False
+    return correo.enviar(para, asunto, texto)

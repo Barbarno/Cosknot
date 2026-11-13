@@ -11,22 +11,33 @@ from correo import enviar
 from estados_pedido import TransicionInvalida, cambiar_estado, rol_en_pedido, transiciones_disponibles
 from formularios import EstadoForm, MensajeForm, PedidoForm
 from models import Creator, Order, OrderMessage, Work
+from outbox import encolar
 
 bp = Blueprint("pedidos", __name__, url_prefix="/pedidos")
 
 
 def _avisar(para: str, asunto: str, texto: str) -> None:
-    """Un aviso que falla no puede tumbar el pedido: `enviar` ya se traga el error."""
+    """Intenta el aviso; si falla y hay outbox, lo deja pendiente de reintento.
+
+    Un aviso que falla no puede tumbar el pedido: el envío devuelve `False`, se
+    encola el mismo aviso y la respuesta sigue su curso.
+    """
     correo = current_app.extensions.get("correo")
     if correo is None or not para:
         return
-    enviar(
-        correo,
-        para,
-        asunto,
-        texto,
-        sincrono=not bool(current_app.config.get("EMAIL_ASYNC")),
-    )
+    if enviar(correo, para, asunto, texto):
+        return
+    if not current_app.config.get("EMAIL_ASYNC") or not correo.activo:
+        return
+    sesion = getattr(g, "db", None)
+    if sesion is None:
+        return
+    try:
+        encolar(sesion, para, asunto, texto)
+        sesion.commit()
+    except Exception as error:  # noqa: BLE001 - el pedido va antes que el aviso
+        sesion.rollback()
+        current_app.logger.warning("no se pudo encolar el aviso a %s: %s", para, error)
 
 
 

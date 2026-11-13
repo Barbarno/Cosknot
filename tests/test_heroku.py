@@ -143,6 +143,33 @@ def test_un_valor_absurdo_de_pool_no_rompe(monkeypatch):
         motor.dispose()
 
 
+def test_el_limite_de_intentos_usa_memoria_por_defecto(tmp_path, monkeypatch):
+    monkeypatch.delenv("RATELIMIT_STORAGE_URI", raising=False)
+    aplicacion = create_app(
+        {
+            "TESTING": True,
+            "DATABASE_URL": f"sqlite:///{(tmp_path / 'limite.db').as_posix()}",
+            "SECRET_KEY": "clave-de-pruebas",
+        }
+    )
+    assert aplicacion.config["RATELIMIT_STORAGE_URI"] == "memory://"
+    # El valor llega de verdad al backend del limitador, no se queda en config.
+    assert type(limiter._storage).__name__ == "MemoryStorage"
+
+
+def test_la_variable_del_limite_manda_sobre_el_valor_por_defecto(tmp_path, monkeypatch):
+    monkeypatch.setenv("RATELIMIT_STORAGE_URI", "memory://")
+    aplicacion = create_app(
+        {
+            "TESTING": True,
+            "DATABASE_URL": f"sqlite:///{(tmp_path / 'limite2.db').as_posix()}",
+            "SECRET_KEY": "clave-de-pruebas",
+        }
+    )
+    assert aplicacion.config["RATELIMIT_STORAGE_URI"] == "memory://"
+    assert type(limiter._storage).__name__ == "MemoryStorage"
+
+
 def test_el_arranque_en_postgres_no_migra_ni_conecta(tmp_path, monkeypatch):
     """Las migraciones van en el proceso release, no en el arranque del dyno.
 

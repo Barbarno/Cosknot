@@ -205,14 +205,14 @@ El esquema vive en Alembic. `alembic.ini` apunta a `migrations/`, y
 `target_metadata` es `Base.metadata`, así que `alembic revision --autogenerate`
 compara los modelos contra la base real.
 
-- **PostgreSQL (producción):** el esquema lo mueve Alembic. `create_app()` llama a
-  `migraciones.aplicar_migraciones()`, que toma un advisory lock de PostgreSQL en
-  una conexión aparte antes de lanzar `upgrade head`. Gunicorn arranca dos workers
-  y los dos ejecutan `create_app()`; sin el lock, dos `ALTER TABLE` simultáneos se
-  pisan. El que llega segundo espera, encuentra la base al día y su `upgrade` no
-  hace nada.
-- **SQLite (local y tests):** se sigue usando `Base.metadata.create_all(engine)`.
-  Es instantáneo, idempotente y no hay despliegue que coordinar.
+- **PostgreSQL (producción):** el esquema lo aplica el proceso `release` del
+  Procfile con `alembic upgrade head`, una vez por despliegue y antes de que el
+  dyno nuevo reciba tráfico. Si la migración falla, Heroku aborta el despliegue y
+  la versión anterior sigue sirviendo: no hay ventana con el esquema a medias. El
+  arranque del dyno no migra ni siembra; `create_app()` solo llama a `create_all()`
+  cuando la base es SQLite.
+- **SQLite (local y tests):** `Base.metadata.create_all(engine)` crea el esquema
+  desde los modelos. Es instantáneo, idempotente y no hay despliegue que coordinar.
 
 Cambiar una columna en `models.py` ya no basta: hace falta
 `alembic revision --autogenerate -m "..."` y revisar el fichero generado antes de

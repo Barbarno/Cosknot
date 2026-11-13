@@ -1,5 +1,10 @@
 # problemas con Render y Neon
 
+> **Aviso histórico.** Este documento describe el despliegue antiguo en Render con
+> Neon y se conserva como referencia. El despliegue actual es Heroku con Heroku
+> Postgres; ver `docs/decisions/0003-heroku-hosting.md`. Nada de lo que hay debajo
+> aplica a la producción de hoy.
+
 Formato: síntoma, causa y arreglo. Los pasos de despliegue están en
 `docs/deployment.md` y las copias de seguridad en `docs/backups.md`.
 

@@ -302,8 +302,13 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
     app.config.setdefault("RESEND_API_KEY", os.environ.get("RESEND_API_KEY"))
     app.config.setdefault("EMAIL_FROM", os.environ.get("EMAIL_FROM"))
     app.config.setdefault("EMAIL_REPLY_TO", os.environ.get("EMAIL_REPLY_TO"))
+    # EMAIL_ASYNC=1 (defecto): si el envío en la petición falla, el aviso va a
+    # email_outbox y el hilo lo reintenta. 0: se intenta una vez y se descarta.
     app.config.setdefault(
         "EMAIL_ASYNC", (os.environ.get("EMAIL_ASYNC") or "1") != "0" and not es_test
+    )
+    app.config.setdefault(
+        "EMAIL_MAX_INTENTOS", os.environ.get("EMAIL_MAX_INTENTOS") or "5"
     )
     configurar_sentry(app)
     correo = crear_correo(app.config)

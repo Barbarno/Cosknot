@@ -170,3 +170,39 @@ class OrderMessage(Base):
 
     def __repr__(self) -> str:
         return f"<OrderMessage {self.id}>"
+
+
+ESTADOS_AVISO = ("pendiente", "enviado", "fallido")
+
+
+class EmailOutbox(Base):
+    """Aviso que no salió en la petición y espera reintento.
+
+    El estado vive en la base, no en memoria: si el dyno se reinicia a mitad de un
+    reintento, la fila sigue `pendiente` y el hilo la recoge al volver. `clave` es
+    el hash de destinatario, asunto y cuerpo, y es única: dos peticiones iguales
+    (un doble clic, un reintento del navegador) no encolan el aviso dos veces.
+    """
+
+    __tablename__ = "email_outbox"
+    __table_args__ = (UniqueConstraint("clave", name="uq_email_outbox_clave"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    clave: Mapped[str] = mapped_column(String(64), index=True)
+    destinatario: Mapped[str] = mapped_column(String(200), index=True)
+    asunto: Mapped[str] = mapped_column(String(200))
+    cuerpo: Mapped[str] = mapped_column(Text)
+    estado: Mapped[str] = mapped_column(
+        String(20), default="pendiente", server_default="pendiente", index=True
+    )
+    intentos: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    proximo_intento: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), index=True
+    )
+    ultimo_error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    enviado_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    def __repr__(self) -> str:
+        return f"<EmailOutbox {self.id} {self.estado} {self.destinatario}>"
+

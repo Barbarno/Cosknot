@@ -1,3 +1,10 @@
+# OBSOLETO desde la fase 1 de la migración a Heroku (docs/decisions/0003).
+#
+# Heroku despliega solo con `git push heroku main`; no hay API que sondear ni
+# servicio que despertar. Este flujo queda desactivado con un `if: false` en el
+# trabajo en vez de borrarlo, a la espera de confirmación.
+#
+# --- referencia histórica, no usar ---
 name: despliegue
 
 on:
@@ -15,6 +22,7 @@ concurrency:
 
 jobs:
   deploy:
+    if: ${{ false }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

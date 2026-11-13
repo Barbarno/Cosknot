@@ -3,7 +3,7 @@
 Dos backends con la misma interfaz:
 
 - `AlmacenLocal`: escribe en `static/uploads/`. Solo vale en desarrollo, porque el
-  disco de Render es efímero y se borra en cada despliegue.
+  disco del dyno es efímero y se borra en cada despliegue.
 - `AlmacenR2`: habla con Cloudflare R2 por la API compatible con S3 (boto3).
 
 `crear_almacen()` decide cuál toca. Si en producción faltan las claves de R2, no
@@ -205,7 +205,7 @@ def crear_almacen(config: dict[str, Any], produccion: bool) -> tuple[Almacen | N
         return None, "IMAGE_STORAGE=r2 pero faltan las variables de R2"
 
     if produccion:
-        # En Render el disco es efímero: subir ahí sería perder la foto en el
+        # En Heroku el disco es efímero: subir ahí sería perder la foto en el
         # siguiente despliegue. Mejor desactivar la subida con un mensaje.
         return None, "las subidas están desactivadas: configura R2_* para activarlas"
 

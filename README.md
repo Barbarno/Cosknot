@@ -25,7 +25,7 @@ dentro de la web todavía no: el cobro y la comisión llegan más adelante.
 - buscador en `/buscar?q=` que mira en el nombre, la bio, la ciudad y la especialidad
   del creador, y en el título y la descripción de las obras
 - página de equipo en `/nosotros`, con quién hace qué y cómo funciona el marketplace
-- despliegue en Render con base de datos en Neon, dominio propio y HTTPS
+- despliegue en Heroku con Heroku Postgres, dominio propio y HTTPS
 - página 404 propia
 - `robots.txt` y `sitemap.xml` generados desde las rutas
 - `healthz` para comprobar que la base de datos responde
@@ -56,8 +56,9 @@ Si no hay `DATABASE_URL` en el entorno, la app usa SQLite en `cosknot.db`, que s
 sola la primera vez. También se rellena el catálogo de ejemplo, pero solo si la tabla
 `creators` está vacía, así que reiniciar no duplica nada.
 
-Para usar Neon en vez de SQLite, copia `.env.example` a `.env`, rellena `DATABASE_URL`
-y arranca igual.
+Para usar PostgreSQL en vez de SQLite, copia `.env.example` a `.env`, rellena
+`DATABASE_URL` y arranca igual. En PostgreSQL el esquema lo aplica Alembic; `create_all()`
+solo se usa con SQLite.
 
 ## pruebas
 
@@ -82,17 +83,17 @@ Son pruebas con el cliente de Flask y una base de datos temporal, así que no to
 
 ## despliegue
 
-Está desplegado en Render con una base de datos gratuita de Neon:
+Está desplegado en Heroku con Heroku Postgres:
 
-- producción: https://cosknot.duckdns.org (health check en `/healthz`)
-- servicio: https://cosknot.onrender.com
+- producción: https://www.cosknot.es (health check en `/healthz`)
+- aplicación: `https://<app>.herokuapp.com` (health check en `/healthz`); el
+  nombre de la app se concreta en la fase de despliegue
 
-El plan free duerme el servicio a los 15 minutos sin tráfico. La primera visita
-después tarda unos 50 segundos, no es que esté caído.
+El dyno Basic está siempre encendido: no hay arranque en frío ni servicio dormido.
 
 Los pasos completos están en `docs/deployment.md`.
 
 ## tecnologías
 
-Python, Flask, Jinja, SQLAlchemy, SQLite en local y PostgreSQL (Neon) en producción,
-gunicorn, pytest, GitHub Actions y Render.
+Python, Flask, Jinja, SQLAlchemy, SQLite en local y PostgreSQL en producción
+(Heroku Postgres), gunicorn, pytest, GitHub Actions y Heroku.
