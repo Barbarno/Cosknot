@@ -88,6 +88,23 @@ Después, las claves de cada servicio, cuando existan (pasos 6, 7 y 8):
 sola), pero dejarlo escrito evita sorpresas si algún día se ejecuta el proceso en otro
 sitio.
 
+### atajo: un script con el plan completo
+
+Los pasos 2, 3 y 4 están en `scripts/desplegar_heroku.py`. Sin argumentos solo enseña
+lo que haría, sin tocar nada; con `--ejecutar` lo lanza en orden y para en el primer
+fallo:
+
+```bash
+python scripts/desplegar_heroku.py                  # plan, sin efectos
+python scripts/desplegar_heroku.py --ejecutar        # crea app, addon, vars, dominios, push
+python scripts/desplegar_heroku.py --app cosknot-es --ejecutar
+```
+
+Es idempotente: si la app y el addon ya existen, no los vuelve a crear. Las claves de
+terceros las toma del entorno solo si están puestas; las que falten no se configuran
+y la función correspondiente queda desactivada con su aviso. `SECRET_KEY` se genera
+en el momento y no se imprime.
+
 ## 4. primer despliegue y migraciones
 
 ```bash
