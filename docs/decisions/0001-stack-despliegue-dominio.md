@@ -1,7 +1,11 @@
 # stack, hosting, base de datos y dominio
 
 fecha: 2026-11-12
-estado: aceptada
+estado: **sustituida en hosting y base de datos por `0003-heroku-hosting.md`**
+
+Lo que sigue es la decisión original (Render + Neon, 0 €/mes). Se conserva como
+histórico: el despliegue actual es Heroku con Heroku Postgres, 12 $/mes. Python,
+Flask, Jinja, gunicorn y SQLite solo en local siguen vigentes.
 
 ## decisión
 
