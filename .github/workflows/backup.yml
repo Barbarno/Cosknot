@@ -54,22 +54,17 @@ jobs:
           done
 
       # La cadena de la base no se guarda en GitHub: se pide a Heroku en tiempo de
-      # ejecución, así que una rotación de credenciales no rompe la copia.
+      # ejecución, así que una rotación de credenciales no rompe la copia. Va por la
+      # API de la plataforma, no por la CLI: el runner solo necesita Python.
       - name: Obtener DATABASE_URL de Heroku
         run: |
           set -euo pipefail
-          command -v heroku >/dev/null || { echo "falta la CLI de heroku en el runner" >&2; exit 1; }
-          URL="$(heroku config:get DATABASE_URL -a "$HEROKU_APP_NAME")"
+          URL="$(python scripts/heroku_config.py "$HEROKU_APP_NAME" database_url)"
           if [ -z "$URL" ]; then
-            echo "heroku no devolvió DATABASE_URL para $HEROKU_APP_NAME" >&2
+            echo "Heroku no devolvió DATABASE_URL para $HEROKU_APP_NAME" >&2
             exit 1
           fi
-          # sslmode=require: el addon lo exige y psycopg no lo añade solo.
-          case "$URL" in
-            *sslmode=*) ;;
-            *\?*) URL="$URL&sslmode=require" ;;
-            *) URL="$URL?sslmode=require" ;;
-          esac
+          # El script ya añade sslmode=require; se enmascara para que no acabe en el log.
           echo "::add-mask::$URL"
           echo "DATABASE_URL=$URL" >> "$GITHUB_ENV"
 

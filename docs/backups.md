@@ -26,9 +26,8 @@ repositorio. `heroku pg:backups` lista las copias con su identificador y su esta
 
 `backup.yml` hace, en este orden:
 
-1. obtiene `DATABASE_URL` en tiempo de ejecución desde Heroku con
-   `heroku config:get DATABASE_URL`, así que la cadena de la base no está guardada
-   en los secretos del repositorio;
+1. obtiene `DATABASE_URL` en tiempo de ejecución desde la API de Heroku
+   (`scripts/heroku_config.py`, sin CLI y sin guardar la cadena en el repositorio);
 2. vuelca con `pg_dump --format=custom --no-owner --no-privileges`;
 3. cifra con `openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:BACKUP_PASSPHRASE`;
 4. sube el fichero a Cloudflare R2 con boto3 y `region_name="auto"`;
