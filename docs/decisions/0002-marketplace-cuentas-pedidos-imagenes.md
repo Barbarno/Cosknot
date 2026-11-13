@@ -28,6 +28,10 @@ de hosting.
   subidas se desactivan con un mensaje y la app arranca igual.
 - **CSP**: se mantiene cerrada y `img-src` solo se abre, sin comodines, al origen que
   diga `R2_PUBLIC_BASE_URL`.
+- **Correo**: Resend por HTTP, nunca SMTP (Render free bloquea 25, 465 y 587). Backend
+  de consola en desarrollo y en tests. El envío va en un hilo aparte con timeout de 5 s
+  y un fallo de correo no tumba el pedido. Los avisos son nuevo encargo, cambio de
+  estado y mensaje nuevo, siempre a la otra parte.
 
 ## por qué
 

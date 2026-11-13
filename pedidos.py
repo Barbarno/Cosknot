@@ -2,15 +2,32 @@
 
 from __future__ import annotations
 
-from flask import Blueprint, abort, flash, g, redirect, render_template, url_for
+from flask import Blueprint, abort, current_app, flash, g, redirect, render_template, url_for
 from flask_login import current_user, login_required
 from sqlalchemy import select
 
+import avisos
+from correo import enviar
 from estados_pedido import TransicionInvalida, cambiar_estado, rol_en_pedido, transiciones_disponibles
 from formularios import EstadoForm, MensajeForm, PedidoForm
 from models import Creator, Order, OrderMessage, Work
 
 bp = Blueprint("pedidos", __name__, url_prefix="/pedidos")
+
+
+def _avisar(para: str, asunto: str, texto: str) -> None:
+    """Un aviso que falla no puede tumbar el pedido: `enviar` ya se traga el error."""
+    correo = current_app.extensions.get("correo")
+    if correo is None or not para:
+        return
+    enviar(
+        correo,
+        para,
+        asunto,
+        texto,
+        sincrono=not bool(current_app.config.get("EMAIL_ASYNC")),
+    )
+
 
 
 @bp.before_request
@@ -80,6 +97,7 @@ def nuevo(slug: str) -> str:
         )
     )
     g.db.commit()
+    _avisar(*avisos.nuevo_pedido(pedido))
     flash("encargo enviado al taller", "ok")
     return redirect(url_for("pedidos.detalle", pedido_id=pedido.id))
 
@@ -104,12 +122,14 @@ def estado(pedido_id: int) -> str:
     if not form.validate_on_submit():
         flash("estado no válido", "error")
         return redirect(url_for("pedidos.detalle", pedido_id=pedido.id))
+    anterior = pedido.status
     try:
         cambiar_estado(pedido, form.estado.data, current_user)
     except TransicionInvalida as error:
         flash(str(error), "error")
         return redirect(url_for("pedidos.detalle", pedido_id=pedido.id))
     g.db.commit()
+    _avisar(*avisos.cambio_de_estado(pedido, anterior, current_user.email))
     flash(f"el pedido pasa a {pedido.status}", "ok")
     return redirect(url_for("pedidos.detalle", pedido_id=pedido.id))
 
@@ -121,12 +141,12 @@ def mensaje(pedido_id: int) -> str:
     if not form.validate_on_submit():
         flash("el mensaje está vacío", "error")
         return redirect(url_for("pedidos.detalle", pedido_id=pedido.id))
-    g.db.add(
-        OrderMessage(
-            order_id=pedido.id,
-            author_id=current_user.id,
-            body=form.cuerpo.data.strip(),
-        )
+    nuevo_mensaje = OrderMessage(
+        order_id=pedido.id,
+        author_id=current_user.id,
+        body=form.cuerpo.data.strip(),
     )
+    g.db.add(nuevo_mensaje)
     g.db.commit()
+    _avisar(*avisos.mensaje_nuevo(pedido, nuevo_mensaje, current_user.email))
     return redirect(url_for("pedidos.detalle", pedido_id=pedido.id))

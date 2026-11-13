@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from db import DEFAULT_DATABASE_URL, build_engine, normalize_database_url
 from almacenamiento import crear_almacen, origen_de
+from correo import CorreoConsola, crear_correo
 from extensiones import csrf, limiter, login_manager
 from formularios import PedidoForm
 from fotos import foto
@@ -186,6 +187,19 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
     almacen, motivo_almacen = crear_almacen(app.config, produccion=produccion)
     app.extensions["almacen"] = almacen
     app.extensions["almacen_motivo"] = motivo_almacen
+
+    # Correo. Sin RESEND_API_KEY o sin EMAIL_FROM se usa la consola en desarrollo y
+    # queda desactivado en producción, sin tumbar el arranque.
+    app.config.setdefault("RESEND_API_KEY", os.environ.get("RESEND_API_KEY"))
+    app.config.setdefault("EMAIL_FROM", os.environ.get("EMAIL_FROM"))
+    app.config.setdefault("EMAIL_REPLY_TO", os.environ.get("EMAIL_REPLY_TO"))
+    app.config.setdefault(
+        "EMAIL_ASYNC", (os.environ.get("EMAIL_ASYNC") or "1") != "0" and not es_test
+    )
+    correo = crear_correo(app.config)
+    if correo.nombre == "desactivado" and not produccion:
+        correo = CorreoConsola()
+    app.extensions["correo"] = correo
 
     # En PostgreSQL el esquema lo mueve Alembic, con un advisory lock para que los
     # dos workers de gunicorn no migren a la vez. En SQLite (local y tests) se crea

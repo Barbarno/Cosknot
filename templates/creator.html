@@ -26,10 +26,12 @@
     <p class="meta">{{ creator.location }} · {{ works|length }} piezas publicadas</p>
     <p class="bio">{{ creator.bio }}</p>
     <div class="profile-actions">
-      <a class="button button-primary" href="mailto:{{ creator.contact_email }}?subject={{ ("encargo de cosplay: " ~ creator.name)|urlencode }}">escribir a {{ creator.name.split(' ')[0] | lower }}</a>
+      {% if works %}
+        <a class="button button-primary" href="#obras-titulo">ver las piezas y encargar</a>
+      {% endif %}
       <a class="button button-ghost" href="{{ url_for('creators') }}">ver más creadores</a>
     </div>
-    <p class="profile-note">acepta encargos: le escribes, acordáis medidas y plazo, y la pieza se hace para ti.</p>
+    <p class="profile-note">acepta encargos: abres una de sus piezas, cuentas el personaje y el encargo se habla dentro de la web.</p>
   </div>
 </header>
 

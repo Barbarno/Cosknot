@@ -131,7 +131,7 @@ def test_la_ficha_del_creador_muestra_bio_y_obras(cliente, aplicacion):
         assert f"/obras/{obra['slug']}" in cuerpo
 
 
-def test_la_obra_muestra_precio_estado_y_correo(cliente):
+def test_la_obra_muestra_precio_estado_y_taller(cliente):
     creador = SEED_CREATORS[0]
     obra = next(o for o in creador["works"] if o["price_note"])
     respuesta = cliente.get(f"/obras/{obra['slug']}")
@@ -141,7 +141,9 @@ def test_la_obra_muestra_precio_estado_y_correo(cliente):
     assert obra["description"] in cuerpo
     assert obra["price_note"] in cuerpo
     assert obra["status"] in cuerpo
-    assert f"mailto:{creador['contact_email']}" in cuerpo
+    # el correo del taller ya no se publica: el encargo se habla en la web
+    assert creador["contact_email"] not in cuerpo
+    assert "por el pedido, aquí dentro" in cuerpo
     assert f"/creadores/{creador['slug']}" in cuerpo
 
 
