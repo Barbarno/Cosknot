@@ -14,6 +14,7 @@ from wtforms import (
 from wtforms.fields.choices import SelectChoice
 from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional
 
+from estados_pedido import ESTADOS as ESTADOS_PEDIDO
 from seed import SPECIALTIES
 
 ESTADOS_OBRA = ("disponible", "encargo", "agotado")
@@ -29,7 +30,10 @@ class RegistroForm(FlaskForm):
     )
     confirmar = PasswordField(
         "repite la contraseña",
-        validators=[DataRequired(), EqualTo("password", message="las contraseñas no coinciden")],
+        validators=[
+            DataRequired(),
+            EqualTo("password", message="las contraseñas no coinciden"),
+        ],
     )
     rol = RadioField(
         "quiero",
@@ -68,7 +72,33 @@ class ObraForm(FlaskForm):
     precio_nota = StringField(
         "precio orientativo (texto libre)", validators=[Optional(), Length(max=80)]
     )
+    precio_euros = StringField(
+        "precio en euros (para poder cobrar con tarjeta)",
+        validators=[Optional(), Length(max=12)],
+    )
     estado = SelectField(
-        "estado", choices=[SelectChoice(e, e) for e in ESTADOS_OBRA], validators=[DataRequired()]
+        "estado",
+        choices=[SelectChoice(e, e) for e in ESTADOS_OBRA],
+        validators=[DataRequired()],
     )
     enviar = SubmitField("guardar obra")
+
+
+class PedidoForm(FlaskForm):
+    mensaje = TextAreaField(
+        "cuéntale qué necesitas",
+        validators=[DataRequired(), Length(max=4000)],
+    )
+    enviar = SubmitField("hacer el encargo")
+
+
+class MensajeForm(FlaskForm):
+    cuerpo = TextAreaField("mensaje", validators=[DataRequired(), Length(max=4000)])
+    enviar = SubmitField("enviar")
+
+
+class EstadoForm(FlaskForm):
+    estado = SelectField(
+        "nuevo estado", choices=[SelectChoice(e, e) for e in ESTADOS_PEDIDO]
+    )
+    enviar = SubmitField("cambiar")

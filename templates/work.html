@@ -27,7 +27,9 @@
       {% if creator.verified %}· verificado{% endif %} · {{ creator.location }}
     </p>
 
-    <p class="price-line">{{ work.price_note or "precio a consultar" }}</p>
+    <p class="price-line">
+      {% if work.price_cents %}{{ formato_importe(work.price_cents, work.currency) }}{% else %}{{ work.price_note or "precio a consultar" }}{% endif %}
+    </p>
 
     <dl class="detail-list">
       <div>
@@ -46,10 +48,29 @@
         <dt>entrega</dt>
         <dd>desde {{ creator.location }}</dd>
       </div>
+      <div>
+        <dt>contacto</dt>
+        <dd><a href="mailto:{{ creator.contact_email }}">{{ creator.contact_email }}</a></dd>
+      </div>
     </dl>
 
     <div class="work-actions">
-      <a class="button button-primary" href="mailto:{{ creator.contact_email }}?subject={{ ("compra o encargo: " ~ work.title)|urlencode }}">comprar o encargar</a>
+      {% if current_user.is_authenticated %}
+        {% if creator.user_id == current_user.id %}
+          <a class="button button-ghost" href="{{ url_for('cuenta.editar_obra', obra_id=work.id) }}">editar esta obra</a>
+        {% else %}
+          <form class="order-form" method="post" action="{{ url_for('pedidos.nuevo', slug=work.slug) }}">
+            {{ pedido_form.hidden_tag() }}
+            <div class="campo">
+              {{ pedido_form.mensaje(rows=3, placeholder="medidas, plazo, referencias del personaje...") }}
+            </div>
+            {{ pedido_form.enviar(class="button button-primary") }}
+          </form>
+        {% endif %}
+      {% else %}
+        <a class="button button-primary"
+           href="{{ url_for('auth.entrar', next=url_for('work_detail', slug=work.slug)) }}">entrar para encargar</a>
+      {% endif %}
       <a class="button button-ghost" href="{{ url_for('creator_detail', slug=creator.slug) }}">ver perfil del creador</a>
     </div>
 
@@ -66,8 +87,8 @@
     </a>
 
     <p class="profile-note">
-      el trato se cierra por correo con el taller. cosknot no cobra nada en esta versión:
-      pone el escaparate y el contacto.
+      el encargo se habla aquí dentro, en el pedido. cosknot guarda la conversación
+      y el estado de cada encargo.
     </p>
   </div>
 </article>

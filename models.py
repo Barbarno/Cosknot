@@ -80,10 +80,62 @@ class Work(Base):
     title: Mapped[str] = mapped_column(String(160))
     description: Mapped[str] = mapped_column(Text)
     price_note: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    price_cents: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    currency: Mapped[str] = mapped_column(
+        String(3), default="EUR", server_default="EUR", nullable=False
+    )
     status: Mapped[str] = mapped_column(String(40), default="disponible")
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     creator: Mapped[Creator] = relationship(back_populates="works")
+    orders: Mapped[list["Order"]] = relationship(back_populates="work")
 
     def __repr__(self) -> str:
         return f"<Work {self.slug}>"
+
+
+class Order(Base):
+    """Encargo de una obra. El comprador lo pide y el creador lo acepta."""
+
+    __tablename__ = "orders"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    buyer_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    work_id: Mapped[int] = mapped_column(ForeignKey("works.id"), index=True)
+    status: Mapped[str] = mapped_column(
+        String(20), default="solicitado", server_default="solicitado", index=True
+    )
+    amount_cents: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    application_fee_cents: Mapped[int] = mapped_column(
+        Integer, default=0, server_default="0"
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    buyer: Mapped[User] = relationship(foreign_keys=[buyer_id])
+    work: Mapped[Work] = relationship(back_populates="orders")
+    messages: Mapped[list["OrderMessage"]] = relationship(
+        back_populates="order",
+        cascade="all, delete-orphan",
+        order_by="OrderMessage.id",
+    )
+
+    def __repr__(self) -> str:
+        return f"<Order {self.id} {self.status}>"
+
+
+class OrderMessage(Base):
+    """Mensaje dentro de un pedido, entre comprador y creador."""
+
+    __tablename__ = "order_messages"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    order_id: Mapped[int] = mapped_column(ForeignKey("orders.id"), index=True)
+    author_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    body: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    order: Mapped[Order] = relationship(back_populates="messages")
+    author: Mapped[User] = relationship(foreign_keys=[author_id])
+
+    def __repr__(self) -> str:
+        return f"<OrderMessage {self.id}>"

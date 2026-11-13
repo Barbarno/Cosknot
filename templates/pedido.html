@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}pedido #{{ pedido.id }} - cosknot{% endblock %}
+
+{% block content %}
+<section class="panel">
+  <div class="panel-head">
+    <h1>pedido #{{ pedido.id }}</h1>
+    <a class="button button-ghost" href="{{ url_for('pedidos.lista') }}">todos los pedidos</a>
+  </div>
+
+  <p class="perfil-resumen">
+    <a href="{{ url_for('work_detail', slug=pedido.work.slug) }}">{{ pedido.work.title }}</a>
+    · taller: {{ pedido.work.creator.name }}
+    · comprador: {{ pedido.buyer.email }}
+    · estado: <strong>{{ pedido.status }}</strong>
+    · importe: {{ formato_importe(pedido.amount_cents, pedido.work.currency) }}
+  </p>
+
+  {% if transiciones %}
+    <form method="post" action="{{ url_for('pedidos.estado', pedido_id=pedido.id) }}" class="panel-actions">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      {% for destino in transiciones %}
+        <button class="button button-ghost" type="submit" name="estado" value="{{ destino }}">
+          pasar a {{ destino }}
+        </button>
+      {% endfor %}
+    </form>
+  {% endif %}
+
+  <h2>conversación</h2>
+  {% if pedido.messages %}
+    <ul class="mensajes">
+      {% for mensaje in pedido.messages %}
+        <li class="mensaje {% if mensaje.author_id == current_user.id %}propio{% endif %}">
+          <p class="mensaje-meta">
+            {{ mensaje.author.email }}
+            {% if mensaje.created_at %}· {{ mensaje.created_at.strftime("%d/%m/%Y %H:%M") }}{% endif %}
+          </p>
+          <p class="mensaje-cuerpo">{{ mensaje.body }}</p>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="vacio">todavía no hay mensajes.</p>
+  {% endif %}
+
+  <form method="post" action="{{ url_for('pedidos.mensaje', pedido_id=pedido.id) }}" class="form-card">
+    {{ mensaje_form.hidden_tag() }}
+    <div class="campo">
+      {{ mensaje_form.cuerpo(rows=4) }}
+    </div>
+    {{ mensaje_form.enviar(class="button button-primary") }}
+  </form>
+</section>
+{% endblock %}

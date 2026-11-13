@@ -1,12 +1,13 @@
 # modelo de datos
 
 cosknot es un marketplace de cosplay: un creador publica ropa, props, pelucas y
-accesorios, y un comprador los mira, los compra o pide un encargo. De momento el modelo
-solo guarda el escaparate, que son las dos tablas de abajo. Compras, encargos y pagos
-todavía no tienen tabla.
+accesorios, y un comprador los mira, los compra o pide un encargo. El modelo guarda el
+escaparate, las cuentas y los pedidos con su conversación. Los pagos con tarjeta
+llegan en la fase 6 y no añaden tablas propias: el `payment_intent` de Stripe se
+guarda en el pedido.
 
-Hay tres tablas, definidas en `models.py` con SQLAlchemy 2.x: `users`, `creators` y
-`works`.
+Hay cinco tablas, definidas en `models.py` con SQLAlchemy 2.x: `users`, `creators`,
+`works`, `orders` y `order_messages`.
 
 ## tabla `users`
 
@@ -48,13 +49,59 @@ solo permite `comprador` y `creador`; un admin se crea con
 | `creator_id` | INTEGER | no | índice, clave foránea | creador de la obra |
 | `title` | VARCHAR(160) | no | | título de la pieza |
 | `description` | TEXT | no | | materiales, medidas y acabado |
-| `price_note` | VARCHAR(80) | sí | | precio orientativo; si es `None` sale «a consultar» |
+| `price_note` | VARCHAR(80) | sí | | precio orientativo en texto libre; si es `None` sale «a consultar» |
+| `price_cents` | INTEGER | sí | | precio real en céntimos, el que se cobra; `NULL` si el taller no lo ha fijado |
+| `currency` | VARCHAR(3) | no | | moneda ISO-4217, por defecto `EUR` |
 | `status` | VARCHAR(40) | no | | disponibilidad, por defecto `disponible` |
 | `created_at` | DATETIME | no | | fecha de alta, la pone el servidor |
 
 `accent` y `status` tienen valor por defecto en el código, no en la base de datos, así
 que no salen como `DEFAULT` en el `CREATE TABLE`. `created_at` sí lo pone el servidor
 con `server_default=func.now()`.
+
+## tabla `orders`
+
+| columna | tipo | nulo | clave o índice | qué es |
+|---|---|---|---|---|
+| `id` | INTEGER | no | clave primaria | identificador interno |
+| `buyer_id` | INTEGER | no | índice, clave foránea a `users.id` | quién encarga |
+| `work_id` | INTEGER | no | índice, clave foránea a `works.id` | qué obra |
+| `status` | VARCHAR(20) | no | indexado | estado del pedido, por defecto `solicitado` |
+| `amount_cents` | INTEGER | no | | importe acordado en céntimos; copia de `works.price_cents` al crear el pedido |
+| `application_fee_cents` | INTEGER | no | | comisión de cosknot en céntimos; la calcula el cobro |
+| `created_at` | DATETIME | no | | fecha del encargo |
+
+## tabla `order_messages`
+
+| columna | tipo | nulo | clave o índice | qué es |
+|---|---|---|---|---|
+| `id` | INTEGER | no | clave primaria | identificador interno |
+| `order_id` | INTEGER | no | índice, clave foránea a `orders.id` | pedido al que pertenece |
+| `author_id` | INTEGER | no | índice, clave foránea a `users.id` | quién escribe |
+| `body` | TEXT | no | | texto del mensaje |
+| `created_at` | DATETIME | no | | fecha del mensaje |
+
+## estados de un pedido
+
+La máquina de estados vive en `estados_pedido.py`, no en las plantillas.
+
+| desde | puede pasar a | quién |
+|---|---|---|
+| `solicitado` | `aceptado` | creador |
+| `solicitado` | `cancelado` | comprador o creador |
+| `aceptado` | `pagado` | creador (en la fase 6 lo pone el webhook de Stripe) |
+| `aceptado` | `cancelado` | comprador o creador |
+| `pagado` | `enviado` | creador |
+| `pagado` | `cancelado` | comprador o creador |
+| `enviado` | `completado` | comprador |
+| `completado` | — | terminal |
+| `cancelado` | — | terminal |
+
+`cambiar_estado(pedido, destino, usuario)` comprueba tres cosas antes de tocar nada:
+que el destino exista, que la transición esté en la tabla y que el rol del usuario
+pueda provocarla. Un `admin` puede todas. Cualquier otra cosa lanza
+`TransicionInvalida` y la ruta devuelve el pedido sin cambios con un aviso.
+
 
 ## relación
 

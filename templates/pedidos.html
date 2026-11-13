@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}pedidos - cosknot{% endblock %}
+
+{% block content %}
+<section class="panel">
+  <div class="panel-head">
+    <h1>pedidos</h1>
+    <a class="button button-ghost" href="{{ url_for('cuenta.panel') }}">volver a mi cuenta</a>
+  </div>
+
+  <h2>como comprador</h2>
+  {% if compras %}
+    <table class="tabla-obras">
+      <thead>
+        <tr><th>obra</th><th>taller</th><th>estado</th><th>importe</th><th>fecha</th></tr>
+      </thead>
+      <tbody>
+        {% for pedido in compras %}
+          <tr>
+            <td><a href="{{ url_for('pedidos.detalle', pedido_id=pedido.id) }}">{{ pedido.work.title }}</a></td>
+            <td>{{ pedido.work.creator.name }}</td>
+            <td>{{ pedido.status }}</td>
+            <td>{{ formato_importe(pedido.amount_cents, pedido.work.currency) }}</td>
+            <td>{{ pedido.created_at.strftime("%d/%m/%Y") if pedido.created_at else "" }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="vacio">todavía no has hecho ningún encargo.</p>
+  {% endif %}
+
+  {% if ventas %}
+    <h2>como creador</h2>
+    <table class="tabla-obras">
+      <thead>
+        <tr><th>obra</th><th>comprador</th><th>estado</th><th>importe</th><th>fecha</th></tr>
+      </thead>
+      <tbody>
+        {% for pedido in ventas %}
+          <tr>
+            <td><a href="{{ url_for('pedidos.detalle', pedido_id=pedido.id) }}">{{ pedido.work.title }}</a></td>
+            <td>{{ pedido.buyer.email }}</td>
+            <td>{{ pedido.status }}</td>
+            <td>{{ formato_importe(pedido.amount_cents, pedido.work.currency) }}</td>
+            <td>{{ pedido.created_at.strftime("%d/%m/%Y") if pedido.created_at else "" }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+</section>
+{% endblock %}

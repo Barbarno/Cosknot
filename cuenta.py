@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from flask import Blueprint, abort, flash, g, redirect, render_template, url_for
+from flask import Blueprint, abort, flash, g, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from sqlalchemy import select
 
 from formularios import ObraForm, PerfilForm
+from importes import euros_a_centimos
 from models import Creator, Work
 from seguridad import slug_unico, slugify
 
@@ -82,6 +83,8 @@ def nueva_obra() -> str:
             title=form.titulo.data.strip(),
             description=form.descripcion.data.strip(),
             price_note=(form.precio_nota.data or "").strip() or None,
+            price_cents=euros_a_centimos(form.precio_euros.data),
+            currency="EUR",
             status=form.estado.data,
         )
         g.db.add(obra)
@@ -95,10 +98,15 @@ def nueva_obra() -> str:
 def editar_obra(obra_id: int) -> str:
     obra = _obra_propia(obra_id)
     form = ObraForm(obj=obra)
+    if request.method == "GET":
+        form.precio_euros.data = (
+            f"{obra.price_cents / 100:.2f}" if obra.price_cents else ""
+        )
     if form.validate_on_submit():
         obra.title = form.titulo.data.strip()
         obra.description = form.descripcion.data.strip()
         obra.price_note = (form.precio_nota.data or "").strip() or None
+        obra.price_cents = euros_a_centimos(form.precio_euros.data)
         obra.status = form.estado.data
         g.db.commit()
         flash("obra actualizada", "ok")

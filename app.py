@@ -16,6 +16,8 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from db import DEFAULT_DATABASE_URL, build_engine, normalize_database_url
 from extensiones import csrf, limiter, login_manager
+from formularios import PedidoForm
+from importes import formato_importe
 from migraciones import aplicar_migraciones
 from models import Base, Creator, User, Work
 from seed import SPECIALTIES, seed_database
@@ -217,10 +219,12 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
     from admin import bp as admin_bp
     from auth import bp as auth_bp
     from cuenta import bp as cuenta_bp
+    from pedidos import bp as pedidos_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(cuenta_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(pedidos_bp)
 
     @app.after_request
     def cabeceras_de_seguridad(response: Response) -> Response:
@@ -251,6 +255,7 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
             "current_year": 2026,
             "equipo": EQUIPO,
             "foto": foto_de,
+            "formato_importe": formato_importe,
         }
 
     @app.route("/")
@@ -323,7 +328,11 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
             return render_template("404.html"), 404
         otras = [obra for obra in work.creator.works if obra.id != work.id]
         return render_template(
-            "work.html", work=work, creator=work.creator, otras=otras
+            "work.html",
+            work=work,
+            creator=work.creator,
+            otras=otras,
+            pedido_form=PedidoForm(),
         )
 
     @app.route("/robots.txt")

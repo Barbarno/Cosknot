@@ -38,6 +38,14 @@
     </div>
 
     <div class="campo">
+      {{ form.precio_euros.label }}
+      {{ form.precio_euros(inputmode="decimal") }}
+      {% if form.precio_euros.errors %}
+        <ul class="errores">{% for error in form.precio_euros.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+      {% endif %}
+    </div>
+
+    <div class="campo">
       {{ form.estado.label }}
       {{ form.estado() }}
     </div>
