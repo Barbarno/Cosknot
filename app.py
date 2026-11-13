@@ -9,16 +9,14 @@ from typing import Any
 from xml.sax.saxutils import escape
 
 from flask import Flask, Response, g, render_template, request, url_for
-from sqlalchemy import create_engine, func, select, text
-from sqlalchemy.engine import Engine
+from sqlalchemy import func, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy.pool import StaticPool
 
+from db import DEFAULT_DATABASE_URL, build_engine, normalize_database_url
+from migraciones import aplicar_migraciones
 from models import Base, Creator, Work
 from seed import SPECIALTIES, seed_database
-
-DEFAULT_DATABASE_URL = "sqlite:///cosknot.db"
 
 # Fotos de piezas y talleres sacadas de Wikimedia Commons (licencias libres).
 # La lista es explícita porque cada foto se eligió a mano para que pegue con la
@@ -100,29 +98,9 @@ EQUIPO = [
 ]
 
 
-def normalize_database_url(url: str | None) -> str:
-    if not url:
-        return DEFAULT_DATABASE_URL
-    if url.startswith("postgres://"):
-        return "postgresql+psycopg://" + url[len("postgres://") :]
-    if url.startswith("postgresql://"):
-        return "postgresql+psycopg://" + url[len("postgresql://") :]
-    return url
-
-
-def build_engine(url: str) -> Engine:
-    options: dict[str, Any] = {}
-    if url.startswith("sqlite"):
-        options["connect_args"] = {"check_same_thread": False}
-        if ":memory:" in url or url.endswith(":memory:"):
-            options["poolclass"] = StaticPool
-    else:
-        options["pool_pre_ping"] = True
-        # Neon va por pgbouncer en modo transacción: no guarda estado entre
-        # transacciones, así que los prepared statements que cachea psycopg3
-        # fallan. Desactivando la caché no hay problema.
-        options["connect_args"] = {"sslmode": "require", "prepare_threshold": None}
-    return create_engine(url, **options)
+def debe_sembrar(url: str, seed_on_start: str | None) -> bool:
+    """El catálogo de ejemplo se siembra en local (SQLite) o si se pide a mano."""
+    return url.startswith("sqlite") or seed_on_start == "1"
 
 
 def create_app(config: dict[str, Any] | None = None) -> Flask:
@@ -152,15 +130,35 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
     app.extensions["db_engine"] = engine
     app.extensions["db_session"] = session_factory
 
-    Base.metadata.create_all(engine)
-    # gunicorn arranca dos workers y cada uno ejecuta create_app(): los dos pueden
-    # ver las tablas vacías y sembrar a la vez, y el segundo choca contra el índice
-    # único de slug. Perder esa carrera es lo normal.
-    try:
-        with session_factory() as bootstrap:
-            seed_database(bootstrap)
-    except IntegrityError:
-        pass
+    es_sqlite = app.config["DATABASE_URL"].startswith("sqlite")
+    es_test = bool(app.config.get("TESTING"))
+
+    # En PostgreSQL el esquema lo mueve Alembic, con un advisory lock para que los
+    # dos workers de gunicorn no migren a la vez. En SQLite (local y tests) se crea
+    # con create_all: es instantáneo, idempotente y no hay despliegue que coordinar.
+    if es_sqlite:
+        Base.metadata.create_all(engine)
+    else:
+        aplicar_migraciones(app.config["DATABASE_URL"])
+
+    # El catálogo de ejemplo solo se siembra en local o cuando se pide a mano con
+    # SEED_ON_START=1 / `flask sembrar`. En producción no se toca la base al arrancar.
+    if debe_sembrar(app.config["DATABASE_URL"], os.environ.get("SEED_ON_START")):
+        # gunicorn arranca dos workers y cada uno ejecuta create_app(): los dos pueden
+        # ver las tablas vacías y sembrar a la vez, y el segundo choca contra el índice
+        # único de slug. Perder esa carrera es lo normal.
+        try:
+            with session_factory() as bootstrap:
+                seed_database(bootstrap)
+        except IntegrityError:
+            pass
+
+    @app.cli.command("sembrar")
+    def sembrar_comando() -> None:
+        """Siembra el catálogo de ejemplo en la base configurada."""
+        with session_factory() as sesion:
+            seed_database(sesion)
+        print("catálogo sembrado")
 
     @app.before_request
     def open_session() -> None:

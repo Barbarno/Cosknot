@@ -95,7 +95,26 @@ mirar `pg_trgm` o el índice de texto completo de PostgreSQL.
 
 ## migraciones
 
-No hay Alembic ni nada parecido. `create_all()` solo crea las tablas que faltan y no
-compara columnas, así que cambiar un tipo, una longitud o un `nullable` en `models.py`
-no cambia una tabla que ya existe. Mientras no haya migraciones, cualquier cambio de
-esquema hay que hacerlo a mano en la base de datos o recreando la tabla.
+El esquema vive en Alembic. `alembic.ini` apunta a `migrations/`, y
+`migrations/env.py` saca la URL de `DATABASE_URL` pasándola por
+`normalize_database_url` (la misma función que usa la app, en `db.py`).
+`target_metadata` es `Base.metadata`, así que `alembic revision --autogenerate`
+compara los modelos contra la base real.
+
+- **PostgreSQL (producción):** el esquema lo mueve Alembic. `create_app()` llama a
+  `migraciones.aplicar_migraciones()`, que toma un advisory lock de PostgreSQL en
+  una conexión aparte antes de lanzar `upgrade head`. Gunicorn arranca dos workers
+  y los dos ejecutan `create_app()`; sin el lock, dos `ALTER TABLE` simultáneos se
+  pisan. El que llega segundo espera, encuentra la base al día y su `upgrade` no
+  hace nada.
+- **SQLite (local y tests):** se sigue usando `Base.metadata.create_all(engine)`.
+  Es instantáneo, idempotente y no hay despliegue que coordinar.
+
+Cambiar una columna en `models.py` ya no basta: hace falta
+`alembic revision --autogenerate -m "..."` y revisar el fichero generado antes de
+subirlo. `create_all()` no compara columnas, así que en SQLite local un cambio de
+tipo no se aplica solo: se borra `cosknot.db` y se recrea.
+
+El catálogo de ejemplo no se siembra en producción. `SEED_ON_START=1` o
+`flask sembrar` lo hacen a mano; en SQLite local sigue siendo automático.
+
