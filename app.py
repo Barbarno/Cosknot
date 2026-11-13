@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from db import DEFAULT_DATABASE_URL, build_engine, normalize_database_url
 from almacenamiento import crear_almacen, origen_de
 from correo import CorreoConsola, crear_correo
+from pagos import motivo_desactivado
 from extensiones import csrf, limiter, login_manager
 from formularios import PedidoForm
 from fotos import foto
@@ -27,14 +28,22 @@ from seed import SPECIALTIES, seed_database
 
 
 def politica_csp(app: Flask) -> str:
-    """CSP base; si hay dominio público de imágenes, se abre img-src solo para él."""
+    """CSP base; se abre solo lo que de verdad se usa."""
     partes = [
         "default-src 'self'",
         "object-src 'none'",
         "base-uri 'none'",
-        "form-action 'self'",
         "frame-ancestors 'none'",
     ]
+    # Checkout alojado: el POST del pago responde 303 hacia checkout.stripe.com y
+    # algunos navegadores aplican form-action también a esa redirección. Es la
+    # opción más estrecha: el origen exacto, sin comodín, y solo si el cobro está
+    # configurado.
+    form_action = ["'self'"]
+    if not motivo_desactivado(app.config):
+        form_action.append("https://checkout.stripe.com")
+    partes.insert(3, "form-action " + " ".join(form_action))
+
     origen = origen_de(app.config.get("R2_PUBLIC_BASE_URL") or "")
     if origen:
         partes.append(f"img-src 'self' data: {origen}")
@@ -201,6 +210,16 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
         correo = CorreoConsola()
     app.extensions["correo"] = correo
 
+    # Stripe Connect. Sin claves de prueba, sin webhook o sin COMMISSION_PERCENT el
+    # cobro queda desactivado: no se inventa un porcentaje.
+    for variable in (
+        "STRIPE_SECRET_KEY",
+        "STRIPE_PUBLISHABLE_KEY",
+        "STRIPE_WEBHOOK_SECRET",
+        "COMMISSION_PERCENT",
+    ):
+        app.config.setdefault(variable, os.environ.get(variable))
+
     # En PostgreSQL el esquema lo mueve Alembic, con un advisory lock para que los
     # dos workers de gunicorn no migren a la vez. En SQLite (local y tests) se crea
     # con create_all: es instantáneo, idempotente y no hay despliegue que coordinar.
@@ -302,6 +321,7 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
 
     from admin import bp as admin_bp
     from auth import bp as auth_bp
+    from cobros import bp as cobros_bp
     from cuenta import bp as cuenta_bp
     from pedidos import bp as pedidos_bp
 
@@ -309,6 +329,7 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
     app.register_blueprint(cuenta_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(pedidos_bp)
+    app.register_blueprint(cobros_bp)
 
     @app.after_request
     def cabeceras_de_seguridad(response: Response) -> Response:
@@ -340,6 +361,8 @@ def create_app(config: dict[str, Any] | None = None) -> Flask:
             "formato_importe": formato_importe,
             "almacen_activo": app.extensions.get("almacen") is not None,
             "almacen_motivo": app.extensions.get("almacen_motivo") or "",
+            "cobro_motivo": motivo_desactivado(app.config),
+            "cobro_activo": not motivo_desactivado(app.config),
         }
 
     @app.route("/")

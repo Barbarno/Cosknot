@@ -2,7 +2,16 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from flask_login import UserMixin
@@ -43,6 +52,9 @@ class Creator(Base):
     """Persona que hace cosplay. Tiene varias obras."""
 
     __tablename__ = "creators"
+    __table_args__ = (
+        UniqueConstraint("stripe_account_id", name="uq_creators_stripe_account_id"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     slug: Mapped[str] = mapped_column(String(120), unique=True, index=True)
@@ -54,6 +66,10 @@ class Creator(Base):
     accent: Mapped[int] = mapped_column(Integer, default=0)
     verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     image_key: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    stripe_account_id: Mapped[str | None] = mapped_column(
+        String(255), nullable=True
+    )
+    stripe_onboarding_ok: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     user_id: Mapped[int | None] = mapped_column(
         ForeignKey("users.id"), nullable=True, unique=True, index=True
     )
@@ -100,6 +116,12 @@ class Order(Base):
     """Encargo de una obra. El comprador lo pide y el creador lo acepta."""
 
     __tablename__ = "orders"
+    __table_args__ = (
+        UniqueConstraint("stripe_payment_intent_id", name="uq_orders_stripe_payment_intent"),
+        UniqueConstraint(
+            "stripe_checkout_session_id", name="uq_orders_stripe_checkout_session"
+        ),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     buyer_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
@@ -111,6 +133,13 @@ class Order(Base):
     application_fee_cents: Mapped[int] = mapped_column(
         Integer, default=0, server_default="0"
     )
+    stripe_payment_intent_id: Mapped[str | None] = mapped_column(
+        String(255), nullable=True
+    )
+    stripe_checkout_session_id: Mapped[str | None] = mapped_column(
+        String(255), nullable=True
+    )
+    paid_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     buyer: Mapped[User] = relationship(foreign_keys=[buyer_id])

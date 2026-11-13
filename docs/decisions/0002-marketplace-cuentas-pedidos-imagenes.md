@@ -32,6 +32,28 @@ de hosting.
   de consola en desarrollo y en tests. El envío va en un hilo aparte con timeout de 5 s
   y un fallo de correo no tumba el pedido. Los avisos son nuevo encargo, cambio de
   estado y mensaje nuevo, siempre a la otra parte.
+- **Pagos**: Stripe Connect con cuentas conectadas express, cobro con destination
+  charges y `application_fee_amount` como comisión. Stripe Checkout alojado
+  (redirección), así que no se incrusta `stripe.js`. Solo claves `sk_test_`.
+  `COMMISSION_PERCENT` no tiene valor por defecto: sin él el cobro no se activa. El
+  webhook verifica la firma y es idempotente.
+
+## responsabilidad en los pagos
+
+En esta configuración la plataforma es la responsable de los reembolsos, las disputas
+y los saldos negativos de las cuentas conectadas. Es lo que describe la documentación
+de Stripe para destination charges: el cargo se crea en la cuenta de la plataforma y
+después se transfiere la parte del taller, así que la disputa la atiende la plataforma
+y un saldo negativo en la cuenta conectada lo cubre la plataforma. Por eso el alta es
+express (Stripe hace el KYC) y el cobro solo se activa con claves de pruebas.
+
+## csp y la redirección a checkout
+
+`form-action 'self'` puede bloquear la redirección posterior a un POST si el navegador
+aplica esa directiva a los redirects. La opción más estrecha es añadir el origen exacto
+`https://checkout.stripe.com` a `form-action`, y solo cuando el cobro está configurado.
+No se añaden `script-src` ni `frame-src` de Stripe porque Checkout va alojado: no hay
+JavaScript de Stripe en ninguna página propia.
 
 ## por qué
 

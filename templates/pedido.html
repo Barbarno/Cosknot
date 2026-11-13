@@ -28,6 +28,26 @@
     </form>
   {% endif %}
 
+  {% if rol == "comprador" and pedido.status == "aceptado" %}
+    <div class="panel-actions">
+      {% if cobro_activo %}
+        <form method="post" action="{{ url_for('cobros.pagar', pedido_id=pedido.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="button button-primary" type="submit">
+            pagar {{ formato_importe(pedido.amount_cents, pedido.work.currency) }}
+          </button>
+        </form>
+        <p class="nota-aviso">el pago se hace en Stripe; al volver, el pedido se actualiza solo.</p>
+      {% else %}
+        <p class="nota-aviso">{{ cobro_motivo }}</p>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% if pedido.stripe_payment_intent_id %}
+    <p class="nota-aviso">pago: {{ pedido.stripe_payment_intent_id }}</p>
+  {% endif %}
+
   <h2>conversación</h2>
   {% if pedido.messages %}
     <ul class="mensajes">

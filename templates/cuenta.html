@@ -39,6 +39,28 @@
       <a href="{{ url_for('cuenta.perfil') }}">crear perfil</a>
     </p>
   {% elif perfil %}
+    <div class="perfil-resumen">
+      <p>
+        cobros:
+        {% if perfil.stripe_onboarding_ok %}
+          cuenta de Stripe lista para recibir pagos
+        {% elif perfil.stripe_account_id %}
+          alta empezada, falta terminar en Stripe
+        {% else %}
+          sin cuenta de cobro
+        {% endif %}
+      </p>
+      {% if cobro_activo %}
+        <form method="post" action="{{ url_for('cobros.alta_stripe') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="button button-ghost" type="submit">
+            {% if perfil.stripe_onboarding_ok %}revisar cuenta de Stripe{% else %}configurar cobros{% endif %}
+          </button>
+        </form>
+      {% else %}
+        <p class="nota-aviso">{{ cobro_motivo }}</p>
+      {% endif %}
+    </div>
     {% if obras %}
       <table class="tabla-obras">
         <thead>

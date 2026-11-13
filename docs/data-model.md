@@ -38,6 +38,8 @@ solo permite `comprador` y `creador`; un admin se crea con
 | `accent` | INTEGER | no | | número de paleta visual, por defecto 0 |
 | `verified` | BOOLEAN | no | | creador revisado por el equipo; sale la marca de verificado |
 | `image_key` | VARCHAR(255) | sí | | clave de la foto en el almacén; `NULL` usa la foto de `static/img` |
+| `stripe_account_id` | VARCHAR(255) | sí | único | cuenta conectada express de Stripe; `NULL` si el taller no cobra |
+| `stripe_onboarding_ok` | BOOLEAN | no | | `true` cuando Stripe ya permite cobrar y transferir a esa cuenta |
 | `user_id` | INTEGER | sí | índice único, clave foránea | cuenta que gestiona el taller; `NULL` en los perfiles del seed |
 | `created_at` | DATETIME | no | | fecha de alta, la pone el servidor |
 
@@ -71,6 +73,9 @@ con `server_default=func.now()`.
 | `status` | VARCHAR(20) | no | indexado | estado del pedido, por defecto `solicitado` |
 | `amount_cents` | INTEGER | no | | importe acordado en céntimos; copia de `works.price_cents` al crear el pedido |
 | `application_fee_cents` | INTEGER | no | | comisión de cosknot en céntimos; la calcula el cobro |
+| `stripe_payment_intent_id` | VARCHAR(255) | sí | único | `payment_intent` de Stripe; se rellena en el webhook |
+| `stripe_checkout_session_id` | VARCHAR(255) | sí | único | sesión de Checkout creada al pagar |
+| `paid_at` | DATETIME | sí | | fecha en la que el webhook confirmó el pago |
 | `created_at` | DATETIME | no | | fecha del encargo |
 
 ## tabla `order_messages`
