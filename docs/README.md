@@ -6,6 +6,7 @@ como bóveda de Obsidian.
 
 ## qué hay en cada carpeta
 
+- `traspaso.md`: estado completo para retomar el proyecto o preparar la exposición.
 - `context.md`: de qué va el proyecto, quién lo lleva y qué hay montado ahora.
 - `cosknot-roadmap.md`: hacia dónde va y qué queda por decidir.
 - `cosknot-kanban.md`: el tablero, con lo pendiente y lo terminado.
