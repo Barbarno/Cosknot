@@ -31,6 +31,14 @@ gracias al crédito de GitHub Student Pack; el plan no se puede subir sin salirs
 del crédito, y por eso todo está dimensionado para caber en un dyno y 20
 conexiones.
 
+El crédito no exime de tener tarjeta: Heroku no deja crear apps, desplegar ni usar
+dynos sin un método de pago en la cuenta, y su oferta de estudiante pide «a valid
+credit or debit card on file». La retención de 1 $ para comprobar la tarjeta se
+devuelve. El gasto real del mes es 12 $ - 12 $ de crédito = **0 $**, pero si el
+crédito no está aplicado el cargo llega a la tarjeta: por eso el orden es aplicar el
+crédito primero y crear la app después, y por eso se comprueba en el panel de
+facturación antes del primer `git push`.
+
 ## por qué
 
 - **Heroku y no Render free**: el plan gratuito de Render duerme a los 15 minutos
@@ -108,9 +116,13 @@ subirlo sin medir es la forma más rápida de tumbar la web por conexiones.
   router y obliga a `x_for=2`; con el tráfico actual no compensa la complejidad.
 - **Dos dynos**: el doble de coste, sale del crédito, y rompe la exactitud del
   contador en memoria.
+- **Render free + Neon free si no hay tarjeta**: es la única combinación que es 0 $
+  sin poner ningún método de pago, y es la que había antes de esta decisión. Se
+  paga con arranque en frío de ~50 s, base que se pausa por inactividad y un plan
+  gratuito con menos memoria. Heroku no admite crear apps sin tarjeta, así que si
+  no hay tarjeta posible, la vuelta atrás es esta y no un truco.
 
 ## cuándo revisar esto
-
 - Si el crédito de GitHub Student deja de cubrir los 12 $/mes.
 - Si el tráfico necesita más de un dyno: entonces toca Redis y un dyno más.
 - Si la base pasa de 1 GB o de 20 conexiones de forma sostenida.

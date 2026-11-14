@@ -24,14 +24,28 @@ cuando el 2 y el 3 están hechos.
 
 1. Entra en https://education.github.com/pack con la cuenta de GitHub y pide el
    **GitHub Student Developer Pack**.
-2. Dentro del pack, activa la oferta de Heroku: son **13 $/mes durante 12 meses**, sin
-   tarjeta.
-3. Comprueba en https://dashboard.heroku.com/account/billing que el crédito aparece
-   aplicado. Si no aparece, el despliegue se cobra a la tarjeta y el tope de 13 $ deja
-   de existir.
+2. Dentro del pack, abre la oferta de Heroku y rellena el formulario de
+   https://www2.heroku.com/github-students/signup. Son **312 $ en créditos**, que se
+   gastan a razón de **13 $/mes durante 24 meses**. Lo que no se gaste un mes no pasa
+   al siguiente.
+3. **Añade una tarjeta antes de crear nada.** Heroku no deja crear apps, desplegar ni
+   usar dynos en una cuenta sin método de pago, y la oferta de estudiante no exime de
+   eso. Su FAQ lo dice con estas palabras: *«you will need a valid credit or debit card
+   on file to redeem this offer»*. Vale tarjeta de débito Visa, Mastercard o JCB. Hacen
+   una retención de 1 $ para comprobar la tarjeta y la devuelven; no es un cargo.
+4. Comprueba en https://dashboard.heroku.com/account/billing que aparecen los **312 $**
+   en la sección de información de facturación. Si no aparecen, no has terminado: sin
+   crédito, el mes se cobra de verdad a la tarjeta.
 
-El plan cabe en el crédito con 1 $ de margen: 7 + 5 = 12. Subir el dyno a Standard
-(25 $) o el Postgres a Essential-1 (10 $ más) rompe el tope.
+**El gasto es cero, pero el cero lo paga el crédito, no la ausencia de tarjeta.** El
+plan de este documento son 7 $ (dyno Basic) + 5 $ (Postgres Essential-0) = **12 $**, y
+caben en los 13 $ con 1 $ de margen. Subir el dyno a Standard (25 $) o el Postgres a
+Essential-1 (10 $ más) rompe el tope y empieza a cobrar de verdad.
+
+Si se quiere más margen a cambio de que el dyno se duerma: **Eco** (5 $, 1000 horas) +
+Essential-0 (5 $) = **10 $**, con 3 $ de colchón. Eco apaga el dyno tras 30 minutos sin
+tráfico, así que la primera visita después de un rato tarda en despertar. Basic, en
+cambio, está siempre encendido; por eso es el que usa el `Procfile` de este repo.
 
 ## 2. crear la app y la base
 
