@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 96" role="img" aria-label="cosknot">
+  <g transform="translate(0 16)">
+    <rect x="0" y="0" width="64" height="64" rx="17" fill="#FA8072"/>
+    <path d="M41 43.1A13.5 13.5 0 1 1 41 20.9" fill="none" stroke="#111111" stroke-width="10" stroke-linecap="butt"/>
+    <g fill="none" stroke="#F7F1E8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M25 50.5c-2.4-2.6-.6-6.2 2.2-6.9 3.6-.9 6.1 2.6 4.6 5.2-1.4 2.4-5 2.4-6.4 0-1.9-3.2.6-6.6 3.6-7.4 4.4-1.2 8 1.7 8.8 5" stroke-width="1.6"/>
+      <path d="M28.4 47.8 43 27.4" stroke-width="2.6"/>
+    </g>
+    <ellipse cx="40.6" cy="30.6" rx="1.9" ry="1.2" transform="rotate(-52 40.6 30.6)" fill="#FA8072" stroke="#F7F1E8" stroke-width="1.1"/>
+  </g>
+
+  <!-- el hilo va detras de las letras -->
+  <path d="M84 80C112 52 152 46 192 58c40 12 78 16 116 8 26-6 48-18 66-20"
+        fill="none" stroke="#FA8072" stroke-width="3.4" stroke-linecap="round"/>
+
+  <text x="80" y="68" fill="#111111"
+        font-family="'Segoe UI', 'Arial Black', system-ui, sans-serif"
+        font-size="62" font-weight="900" letter-spacing="-3.4">Cosknot</text>
+</svg>
