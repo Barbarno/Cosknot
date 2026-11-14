@@ -4,7 +4,7 @@ name: salud
 # en un minuto, el flujo falla y llega el aviso de GitHub. No necesita claves.
 #
 # El dominio se cambia en una variable del repositorio: SITIO_URL
-# (por ejemplo https://cosknot.es). Sin ella se usa el dominio de Heroku.
+# (por ejemplo https://cosknot.me). Sin ella se usa el dominio de Heroku.
 
 on:
   schedule:

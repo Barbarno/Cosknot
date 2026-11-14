@@ -159,7 +159,7 @@ restauración falla o los números no cuadran, la copia del día no vale y el fl
 `healthz.yml` hace un `GET /healthz` al día y falla si no responde 200 en un minuto.
 La ruta ya ejecuta `SELECT 1`, así que un 200 significa app y base vivas. El destino
 sale de la variable del repositorio `SITIO_URL` (`gh variable set SITIO_URL --body
-https://cosknot.es`); si falta, usa `https://<HEROKU_APP_NAME>.herokuapp.com`.
+https://cosknot.me`); si falta, usa `https://<HEROKU_APP_NAME>.herokuapp.com`.
 
 ## fallos que ya me han pasado
 

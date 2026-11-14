@@ -11,7 +11,7 @@ comandos.
 | Python | 3.13 (`.python-version`, y el mismo que usa el CI) |
 | servidor | gunicorn `--workers 1 --threads 4 --timeout 50` (Procfile) |
 | migraciones | proceso `release`: `alembic upgrade head` |
-| dominio | `cosknot.es` y `www.cosknot.es` por Cloudflare en modo DNS only |
+| dominio | `cosknot.me` y `www.cosknot.me` por Cloudflare en modo DNS only |
 | HTTPS | certificado automático de Heroku (ACM) |
 | copias | `pg:backups:schedule` + volcado diario a R2 (`docs/backups.md`) |
 | coste | **12 $/mes** (7 $ dyno + 5 $ Postgres), tope 13 $ del crédito de estudiante |
@@ -151,11 +151,28 @@ marketplace real no se llena de datos de demo por arrancar.
 
 ## 5. dominio, Cloudflare y certificado
 
+El dominio `cosknot.me` sale gratis el primer año del GitHub Student Developer Pack:
+la oferta de **Namecheap** incluye *«1 year domain name registration on the .me
+TLD»*. Se pide en https://education.github.com/pack → Namecheap → *Get access*, y se
+registra con el código que da. A partir del segundo año se renueva como cualquier
+dominio (unos 10-15 €/año); si el proyecto no va a seguir, se deja caducar y no se
+renueva.
+
+**Modo proyecto, sin dominio propio:** si no se quiere ni eso, el despliegue funciona
+igual en `https://cosknot.herokuapp.com`, que ya trae HTTPS de Heroku. Entonces se
+salta esta sección entera y el plan se lanza con `--sin-dominio`:
+
+```bash
+python scripts/desplegar_heroku.py --sin-dominio --ejecutar
+```
+
+Los pasos siguientes son para el dominio propio.
+
 ### 5.1 añadir los dominios en Heroku
 
 ```bash
-heroku domains:add cosknot.es -a cosknot
-heroku domains:add www.cosknot.es -a cosknot
+heroku domains:add cosknot.me -a cosknot
+heroku domains:add www.cosknot.me -a cosknot
 heroku domains -a cosknot
 ```
 
@@ -164,14 +181,14 @@ heroku domains -a cosknot
 
 ### 5.2 DNS en Cloudflare: nube gris
 
-En el panel de Cloudflare, en la zona `cosknot.es`:
+En el panel de Cloudflare, en la zona `cosknot.me`:
 
 | tipo | nombre | contenido | proxy |
 |---|---|---|---|
 | CNAME | `www` | el `<algo>.herokudns.com` que dio Heroku | **DNS only** (gris) |
 | CNAME | `@` | el mismo destino | **DNS only** (gris) |
 
-Cloudflare aplana el CNAME del dominio raíz, así que `cosknot.es` funciona sin un
+Cloudflare aplana el CNAME del dominio raíz, así que `cosknot.me` funciona sin un
 registro A fijo. Si el proveedor de DNS no aplana, el raíz necesita un ALIAS/ANAME.
 
 **Nube gris, no naranja.** Es la decisión de `docs/decisions/0003`, y no es estética:
@@ -197,19 +214,19 @@ El estado pasa de `Creating` a `Cert Issued` en unos minutos, siempre que:
 
 1. el DNS ya resuelva al destino de Heroku (propagación de minutos a una hora);
 2. Cloudflare esté en **gris** durante la emisión;
-3. `http://cosknot.es/.well-known/acme-challenge/...` sea accesible sin redirección a
+3. `http://cosknot.me/.well-known/acme-challenge/...` sea accesible sin redirección a
    HTTPS.
 
 Si se queda en `Failing`, se mira `heroku certs:auto -a cosknot` y se comprueba el DNS
-con `nslookup cosknot.es 1.1.1.1`. Cuando el certificado está emitido, se puede pasar
+con `nslookup cosknot.me 1.1.1.1`. Cuando el certificado está emitido, se puede pasar
 Cloudflare a naranja cambiando `PROXY_FIX_X_FOR=2`, pero eso ya es otra decisión y hay
 que probar antes que el límite de intentos sigue contando IPs distintas.
 
 ### 5.4 comprobar
 
 ```bash
-curl -sI https://cosknot.es/healthz
-curl -s  https://cosknot.es/healthz
+curl -sI https://cosknot.me/healthz
+curl -s  https://cosknot.me/healthz
 ```
 
 Tiene que dar `200` y `{"status":"ok"}`. `/healthz` ejecuta un `SELECT 1`: un 503 aquí
@@ -220,7 +237,7 @@ es problema de base de datos, no de gunicorn.
 1. En https://dash.cloudflare.com → **R2** → **Create bucket**. Nombre `cosknot`, sin
    dominio público.
 2. Dentro del bucket, **Settings → Public access**: activa el subdominio `r2.dev` o, si
-   hay dominio propio, conecta `img.cosknot.es` con **Custom domain**. Ese es el valor
+   hay dominio propio, conecta `img.cosknot.me` con **Custom domain**. Ese es el valor
    de `R2_PUBLIC_BASE_URL`.
 3. **Manage R2 API tokens → Create API token**, permiso **Object Read & Write** sobre
    el bucket `cosknot`.
@@ -233,7 +250,7 @@ heroku config:set -a cosknot \
   R2_BUCKET=cosknot \
   R2_ACCESS_KEY_ID="<access key>" \
   R2_SECRET_ACCESS_KEY="<secret key>" \
-  R2_PUBLIC_BASE_URL="https://img.cosknot.es"
+  R2_PUBLIC_BASE_URL="https://img.cosknot.me"
 ```
 
 Sin estas cinco, la app arranca igual y las subidas quedan desactivadas con un aviso en
@@ -245,7 +262,7 @@ aparte (`docs/backups.md`).
 
 ## 7. correo con Resend
 
-1. Crea la cuenta en https://resend.com y añade el dominio `cosknot.es` en **Domains**.
+1. Crea la cuenta en https://resend.com y añade el dominio `cosknot.me` en **Domains**.
 2. Resend da tres registros DNS. En Cloudflare, **en gris también** (los registros de
    correo no se proxian):
 
@@ -262,8 +279,8 @@ aparte (`docs/backups.md`).
 ```bash
 heroku config:set -a cosknot \
   RESEND_API_KEY="re_..." \
-  EMAIL_FROM="cosknot <hola@cosknot.es>" \
-  EMAIL_REPLY_TO="hola@cosknot.es"
+  EMAIL_FROM="cosknot <hola@cosknot.me>" \
+  EMAIL_REPLY_TO="hola@cosknot.me"
 ```
 
 Sin clave, en producción el correo queda desactivado y la web lo dice. Con clave, el
@@ -274,7 +291,7 @@ aviso se intenta dentro de la petición (timeout 5 s); si falla, se guarda en
 
 1. En https://dashboard.stripe.com/test/apikeys copia `sk_test_...` y `pk_test_...`.
 2. Webhook: **Developers → Webhooks → Add endpoint**, URL
-   `https://cosknot.es/stripe/webhook`, eventos `checkout.session.completed` y
+   `https://cosknot.me/stripe/webhook`, eventos `checkout.session.completed` y
    `payment_intent.payment_failed`. Copia el `whsec_...`.
 3. Comisión de la plataforma, en porcentaje entero:
 
@@ -292,7 +309,7 @@ dice. Sin `COMMISSION_PERCENT` tampoco se cobra, porque no hay porcentaje por de
 Probar el webhook sin sacar la tarjeta:
 
 ```bash
-stripe listen --forward-to https://cosknot.es/stripe/webhook
+stripe listen --forward-to https://cosknot.me/stripe/webhook
 stripe trigger checkout.session.completed
 ```
 
@@ -308,7 +325,7 @@ gh secret set R2_ENDPOINT_URL
 gh secret set R2_BUCKET
 gh secret set R2_ACCESS_KEY_ID
 gh secret set R2_SECRET_ACCESS_KEY
-gh variable set SITIO_URL --body https://cosknot.es
+gh variable set SITIO_URL --body https://cosknot.me
 ```
 
 `HEROKU_API_KEY` está en **Account settings → API Key** y solo se muestra una vez. La
@@ -339,11 +356,11 @@ restaura la copia del día (`docs/backups.md`).
 ## 11. comprobaciones después de cada despliegue
 
 ```bash
-curl -s  https://cosknot.es/healthz
-curl -s -o /dev/null -w "%{http_code} /\n"         https://cosknot.es/
-curl -s -o /dev/null -w "%{http_code} creadores\n" https://cosknot.es/creadores
-curl -s -o /dev/null -w "%{http_code} obra\n"      https://cosknot.es/obras/abrigo-de-invierno-fantasia
-curl -s -o /dev/null -w "%{http_code} 404\n"       https://cosknot.es/obras/no-existe
+curl -s  https://cosknot.me/healthz
+curl -s -o /dev/null -w "%{http_code} /\n"         https://cosknot.me/
+curl -s -o /dev/null -w "%{http_code} creadores\n" https://cosknot.me/creadores
+curl -s -o /dev/null -w "%{http_code} obra\n"      https://cosknot.me/obras/abrigo-de-invierno-fantasia
+curl -s -o /dev/null -w "%{http_code} 404\n"       https://cosknot.me/obras/no-existe
 heroku logs --tail -a cosknot
 ```
 

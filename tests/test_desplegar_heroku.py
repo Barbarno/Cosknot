@@ -32,8 +32,8 @@ def test_el_orden_respeta_las_dependencias():
     assert plano[1].startswith("heroku addons:create heroku-postgresql:essential-0")
     assert "--app cosknot --wait" in plano[1]
     assert plano[2].startswith("heroku config:set")
-    assert "domains:add cosknot.es" in plano[3]
-    assert "domains:add www.cosknot.es" in plano[4]
+    assert "domains:add cosknot.me" in plano[3]
+    assert "domains:add www.cosknot.me" in plano[4]
     assert plano[5] == "heroku certs:auto:enable --app cosknot"
     assert plano[6] == "git push heroku main"
     assert plano[7].startswith("heroku run flask sembrar")
@@ -76,8 +76,18 @@ def test_las_opcionales_entran_solo_si_estan():
 
 
 def test_sin_dominio_www_no_se_duplica():
-    plano = comandos_en_plano(plan(dominio="www.cosknot.es", existe_app=True))
+    plano = comandos_en_plano(plan(dominio="www.cosknot.me", existe_app=True))
     assert sum("domains:add" in linea for linea in plano) == 1
+
+
+def test_modo_proyecto_sin_dominio_no_toca_dominios_ni_certificado():
+    plano = comandos_en_plano(plan(dominio="", existe_app=True, existe_addon=True))
+    assert not any("domains:add" in linea for linea in plano)
+    assert not any("certs:auto" in linea for linea in plano)
+    # el resto del despliegue sigue igual
+    assert any(linea.startswith("heroku config:set") for linea in plano)
+    assert plano[-2] == "git push heroku main"
+    assert plano[-1].startswith("heroku run flask sembrar")
 
 
 def test_se_puede_saltar_la_siembra():

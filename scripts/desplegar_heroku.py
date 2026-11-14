@@ -25,7 +25,7 @@ import subprocess
 import sys
 
 APP_POR_DEFECTO = "cosknot"
-DOMINIO_POR_DEFECTO = "cosknot.es"
+DOMINIO_POR_DEFECTO = "cosknot.me"
 REGION = "eu"
 PLAN_POSTGRES = "heroku-postgresql:essential-0"
 
@@ -103,7 +103,12 @@ def plan(
     opcionales: dict[str, str] | None = None,
     sembrar: bool = True,
 ) -> list[list[str]]:
-    """Comandos en orden. Idempotente: lo que ya existe no se repite."""
+    """Comandos en orden. Idempotente: lo que ya existe no se repite.
+
+    Con `dominio` vacío no se añaden dominios ni se activa el certificado: la app
+    queda en `<app>.herokuapp.com`, que ya trae HTTPS. Es el modo proyecto, sin
+    dominio propio y sin gastar en uno.
+    """
     comandos: list[list[str]] = []
 
     if not existe_app:
@@ -129,10 +134,11 @@ def plan(
         + [f"{nombre}={valor}" for nombre, valor in variables.items()]
     )
 
-    comandos.append(["heroku", "domains:add", dominio, "--app", app])
-    if not dominio.startswith("www."):
-        comandos.append(["heroku", "domains:add", f"www.{dominio}", "--app", app])
-    comandos.append(["heroku", "certs:auto:enable", "--app", app])
+    if dominio.strip():
+        comandos.append(["heroku", "domains:add", dominio, "--app", app])
+        if not dominio.startswith("www."):
+            comandos.append(["heroku", "domains:add", f"www.{dominio}", "--app", app])
+        comandos.append(["heroku", "certs:auto:enable", "--app", app])
 
     comandos.append(["git", "push", "heroku", "main"])
     if sembrar:
@@ -232,6 +238,11 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="despliegue de cosknot en Heroku")
     parser.add_argument("--app", default=APP_POR_DEFECTO)
     parser.add_argument("--dominio", default=DOMINIO_POR_DEFECTO)
+    parser.add_argument(
+        "--sin-dominio",
+        action="store_true",
+        help="no añade dominio propio: la app queda en <app>.herokuapp.com",
+    )
     parser.add_argument("--ejecutar", action="store_true", help="lanza los comandos")
     parser.add_argument(
         "--sin-sembrar", action="store_true", help="no siembra el catálogo de ejemplo"
@@ -243,7 +254,7 @@ def main(argv: list[str] | None = None) -> int:
 
     comandos = plan(
         app=args.app,
-        dominio=args.dominio,
+        dominio="" if args.sin_dominio else args.dominio,
         existe_app=ya_existe,
         existe_addon=con_addon,
         opcionales=variables_del_entorno(),
@@ -252,7 +263,7 @@ def main(argv: list[str] | None = None) -> int:
     secretos = plan_secretos_github(args.app)
 
     print(f"app: {args.app}   existe: {ya_existe}   addon: {con_addon}")
-    print(f"dominio: {args.dominio}")
+    print(f"dominio: {'(ninguno, herokuapp.com)' if args.sin_dominio else args.dominio}")
     print("\n--- heroku ---")
     for linea in formatear(comandos, ocultar=("SECRET_KEY",)):
         print(linea)

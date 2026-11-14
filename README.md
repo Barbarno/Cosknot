@@ -85,7 +85,7 @@ Son pruebas con el cliente de Flask y una base de datos temporal, así que no to
 
 Está desplegado en Heroku con Heroku Postgres:
 
-- producción: https://www.cosknot.es (health check en `/healthz`)
+- producción: https://www.cosknot.me (health check en `/healthz`)
 - aplicación: `https://<app>.herokuapp.com` (health check en `/healthz`); el
   nombre de la app se concreta en la fase de despliegue
 

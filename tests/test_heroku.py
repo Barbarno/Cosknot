@@ -78,7 +78,7 @@ def test_el_router_de_heroku_no_es_la_ip_del_cliente(tmp_path, monkeypatch):
         headers={
             "X-Forwarded-For": "203.0.113.7",
             "X-Forwarded-Proto": "https",
-            "X-Forwarded-Host": "cosknot.es",
+            "X-Forwarded-Host": "cosknot.me",
         },
     )
 
