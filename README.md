@@ -3,9 +3,7 @@
 Marketplace de cosplay: un sitio donde quien hace piezas (ropa, props, pelucas y
 accesorios) publica su trabajo y quien las busca las compra o las encarga a medida.
 
-Este repositorio es la **entrega de definición del proyecto**. No hay aplicación
-todavía: lo que hay es lo que pide el enunciado — equipo, idea, rival, FODA, tablero,
-diseño, plan de ingresos y costes, y **las tecnologías que vamos a usar**.
+
 
 ## índice
 
