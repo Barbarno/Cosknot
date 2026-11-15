@@ -40,8 +40,17 @@ Dos, y ninguna se descarga:
 
 | uso | tipografía | por qué |
 |---|---|---|
-| logotipo | Arial Black, peso 900, interletra −3,4 | letra gruesa que aguanta tamaño pequeño |
+| logotipo | **Etna Sans Serif** | letra gruesa de remates rectos; aguanta tamaño pequeño y sigue leyéndose a 32 px |
 | texto e interfaz | Segoe UI con reserva en system-ui y Arial | la del sistema: cero descargas, cero parpadeo |
+
+**El logotipo viaja en trazados, no en fuente.** `logo.svg` y `logo-mark.svg` llevan las
+letras convertidas a curvas, así que se ven idénticas en cualquier ordenador sin instalar
+nada. Es lo que permite usar Etna sin licencia de *webfont*: un dibujo no es una fuente.
+El texto de la interfaz se queda en Segoe UI a propósito, porque incrustar un `.ttf` de
+pago en una web pública sí necesita licencia.
+
+Etna Sans Serif es de TipoType y es de pago. El logo la usa como dibujo; si algún día se
+quisiera usar también en los títulos de la web, habría que comprar la licencia de webfont.
 
 ## colores
 
@@ -72,7 +81,7 @@ grafito.** Nunca hay dos acentos en la misma pantalla.
 
 | pieza | uso del color | uso de la tipografía |
 |---|---|---|
-| cabecera | crema de fondo, logo a la izquierda | logotipo en Arial Black |
+| cabecera | crema de fondo, logo a la izquierda | logotipo en Etna Sans Serif (en trazados) |
 | tarjeta de pieza | blanco sobre gris superficie | título en Segoe UI 600, precio en salmón |
 | botón principal | salmón con texto blanco | Segoe UI 600 |
 | etiqueta «premium» | salmón con texto blanco | Segoe UI 600, 12 px |
