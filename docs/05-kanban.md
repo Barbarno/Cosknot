@@ -49,12 +49,12 @@ Cinco reglas, y las cinco se ven en la exposición:
 | 23 | Dónde desplegar la aplicación | approved |
 | 32 | Búsqueda de IA para las fichas | approved |
 | 33 | Búsqueda de servicios de apoyo | approved |
-| 24 | Alteración de cuentas para Heroku → Cloud Run | doing |
+| 24 | Alteración de cuentas para Heroku → Cloud Run | done |
 | 34 | Documento de despliegue en Cloud Run | doing |
-| 39 | Configurar el proyecto de Google Cloud | doing |
-| 42 | Crear el proyecto en Neon y guardar la cadena | doing |
-| 43 | Desplegar en Cloud Run y comprobar `/healthz` | doing |
-| 44 | Mapear `cosknot.me` en Cloudflare | doing |
+| 39 | Configurar el proyecto de Google Cloud | to do |
+| 42 | Crear el proyecto en Neon y guardar la cadena | to do |
+| 43 | Desplegar en Cloud Run y comprobar `/healthz` | to do |
+| 44 | Mapear `cosknot.me` en Cloudflare | to do |
 | 45 | Prototipo de portada y listado | to do |
 | 46 | Prototipo de la ficha de una pieza | to do |
 | 47 | Integrar el cobro con Stripe Connect | to do |
@@ -99,8 +99,13 @@ desplegado**. `gcloud` no está instalado, no hay cuentas creadas y las cifras d
 las que publica Google, no una medición. Ponerla en *Done* sería afirmar que el sistema
 está en producción, y no lo está.
 
-Lo mismo con la 24: el código está adaptado y las pruebas pasan, pero eso es trabajo en
-curso, no un despliegue terminado.
+La 24 sí está en *Done*, porque lo que pedía la tarjeta está hecho: el código está adaptado
+al despliegue nuevo —`limites.py`, migración `0009`, `K_SERVICE`, `python -m outbox`— y las
+163 pruebas pasan. Lo que no hay es la cuenta, y esa es otra tarjeta: la 39.
+
+Las tarjetas 39, 42, 43 y 44 están en *To do* por el mismo motivo: **no existe ni la cuenta
+de Google ni el proyecto de Neon ni el dominio apuntando**. Una tarjeta en *Doing* sin nada
+detrás es la misma mentira que un *Done* sin nada detrás, solo que más pequeña.
 
 En la exposición la frase es una: «las tecnologías están elegidas y justificadas; el
 despliegue está documentado y pendiente». Ninguna tarjeta del tablero promete lo contrario.
@@ -136,9 +141,9 @@ dentro del issue.
 | columna | tarjetas |
 |---|---|
 | approved | 17 |
-| doing | 8 |
-| done | 2 |
-| to do | 8 |
+| done | 3 |
+| doing | 3 |
+| to do | 12 |
 | **total** | **35**, todas con persona |
 
 ## cómo se lee en pantalla
