@@ -25,6 +25,9 @@ Y así se dice en voz alta, treinta segundos:
 El resto de la página es el anexo: qué hay detrás de cada una de esas cinco, alternativas
 que descartamos y por qué. Está para quien pregunte, no para leerlo de arriba abajo.
 
+Si la pregunta es «¿y esto para qué sirve?», la respuesta corta por tecnología y las
+preguntas típicas con su contestación están en [`09-preguntas.md`](09-preguntas.md).
+
 ## anexo: el resto, por necesidad
 
 | necesidad | solución elegida | por qué |

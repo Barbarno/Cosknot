@@ -19,6 +19,7 @@ diseño, plan de ingresos y costes, y **las tecnologías que vamos a usar**.
 | diseño: nombre, logo, eslogan, tipografía, colores | [`docs/06-diseno.md`](docs/06-diseno.md) |
 | CFO: ingresos, costes y punto de equilibrio | [`docs/07-cfo.md`](docs/07-cfo.md) |
 | CTO: tecnologías, base de datos y despliegue | [`docs/08-cto.md`](docs/08-cto.md) |
+| qué hace cada tecnología y qué contestar si preguntan | [`docs/09-preguntas.md`](docs/09-preguntas.md) |
 
 ## las tecnologías, en una tabla
 
