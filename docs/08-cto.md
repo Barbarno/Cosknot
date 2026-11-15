@@ -3,7 +3,29 @@
 Todo lo de esta página está **elegido y presupuestado**, no instalado. Es la decisión
 técnica previa a construir.
 
-## qué necesita el proyecto
+## las cinco que importan
+
+Esto es lo que responde al enunciado. Cinco líneas:
+
+| qué | qué vamos a usar | por qué |
+|---|---|---|
+| **lenguaje** | **Python 3.13** | legible, un solo lenguaje para la web y los scripts |
+| **framework web** | **Flask 3.1** + **Jinja2** | microframework: cada pieza se ve y se explica en clase |
+| **base de datos** | **PostgreSQL 16** (SQLite en local) | el dominio es relacional y el SQL es el mismo en los dos |
+| **acceso a datos** | **SQLAlchemy 2** + **Alembic** | sin SQL a mano; cada cambio de esquema queda versionado |
+| **despliegue y HTTPS** | **Heroku** con certificado automático | un comando, base gestionada y Let's Encrypt incluido |
+
+Y así se dice en voz alta, treinta segundos:
+
+> Usamos Python con Flask y PostgreSQL, y lo ponemos en Heroku con HTTPS automático. Los
+> demás son servicios que se contratan cuando hacen falta —Stripe para cobrar, Resend
+> para los correos, un almacén para las fotos—, todos con plan gratuito y ninguno pagado
+> hasta que haya ventas.
+
+El resto de la página es el anexo: qué hay detrás de cada una de esas cinco, alternativas
+que descartamos y por qué. Está para quien pregunte, no para leerlo de arriba abajo.
+
+## anexo: el resto, por necesidad
 
 | necesidad | solución elegida | por qué |
 |---|---|---|
