@@ -25,7 +25,7 @@ accesorios) publica su trabajo y quien las busca las compra o las encarga a medi
 |---|---|---|
 | lenguaje | **Python 3.13** | legible, un solo lenguaje para web y scripts |
 | web | **Flask 3** + **Jinja2** | microframework: cada pieza se ve y se explica |
-| base de datos | **PostgreSQL 16**, SQLite en local | el dominio es relacional y el SQL es el mismo |
+| base de datos | **PostgreSQL 16** en **Neon**, SQLite en local | el dominio es relacional y el SQL es el mismo |
 | acceso a datos | **SQLAlchemy 2** + **Alembic** | sin SQL a mano; cada cambio de esquema versionado |
 | estilos | **CSS propio** | sin dependencias ni compilación de frontend |
 | fotos | **Cloudflare R2** (S3 compatible) | 10 GB gratis, servidor aparte para las imágenes |
@@ -33,9 +33,17 @@ accesorios) publica su trabajo y quien las busca las compra o las encarga a medi
 | pagos | **Stripe Connect** | cobra el creador y nosotros la comisión, sin tocar el dinero |
 | suscripción | **Stripe Checkout** | plan premium del taller y destacados de pago |
 | IA | **Google Gemini** | sugerir la descripción de una pieza a partir de la foto |
-| HTTPS | **Let's Encrypt** vía ACM del hosting | certificado automático y gratis |
-| despliegue | **Heroku** (alternativa gratuita: Render) | un solo comando y base gestionada |
+| servidor | **gunicorn** | 2 workers y 4 hilos por instancia |
+| despliegue | **Google Cloud Run** | escala solo de 0 a N instancias; sin servidor que administrar |
+| tareas periódicas | **Cloud Run Jobs** + **Cloud Scheduler** | migraciones y cola de correos sin procesos encendidos |
+| HTTPS | **certificado automático de Cloud Run** | lo emite y lo renueva la plataforma, gratis |
+| DNS | **Cloudflare** en nube gris | resuelve `cosknot.me` y deja llegar la IP real del visitante |
 | integración continua | **GitHub Actions** | nada se sube sin pasar las pruebas |
+
+Coste de todo lo anterior: **0 €/mes**. Cloud Run y Neon están dentro de sus capas
+gratuitas con cien veces de margen sobre lo que generaría un marketplace de 100 talleres, y
+el dominio sale del pack de estudiante el primer año. Los 312 $ del pack siguen sin gastar,
+como red por si algún día hay que pagar infraestructura.
 
 El detalle, las alternativas que descartamos y las fuentes están en
 [`docs/08-cto.md`](docs/08-cto.md).

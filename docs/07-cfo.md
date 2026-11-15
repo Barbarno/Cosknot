@@ -52,44 +52,82 @@ infraestructura arranca en capas gratuitas. El trabajo es del equipo.
 
 | concepto | coste | quién lo cubre |
 |---|---|---|
-| servidor de aplicación (dyno Basic) | 7 $/mes | crédito de estudiante |
-| base de datos PostgreSQL (Essential-0) | 5 $/mes | crédito de estudiante |
+| servidor de aplicación (Google Cloud Run) | 0 € dentro del tramo gratuito | plan gratuito |
+| base de datos PostgreSQL (Neon) | 0 € hasta 0,5 GB | plan gratuito |
 | dominio `cosknot.me` | 0 € el primer año | cupón del pack |
 | DNS y CDN | 0 € | plan gratuito |
 | correo transaccional | 0 € hasta 3.000/mes | plan gratuito |
 | almacenamiento de fotos | 0 € hasta 10 GB | plan gratuito |
 | integración continua | 0 € en repositorio público | plan gratuito |
-| **total** | **12 $/mes ≈ 11,10 €** | **0 € de caja durante 24 meses** |
+| **total** | **0 €/mes** | **0 € de caja** |
 
-El crédito de estudiante son **312 $** (13 $/mes durante 24 meses), y está **confirmado en
-el panel de facturación de Heroku**. A 12 $/mes cubre **26 meses** desde el día en que se
-encienden los dynos: hoy la aplicación existe con **0 dynos y 0 complementos**, así que el
-gasto real es 0 € y el crédito sigue entero. Después, el coste real es 12 $/mes más unos
-12 €/año de dominio.
+El tramo gratuito de Cloud Run son **2 millones de peticiones, 180.000 vCPU-segundo y
+360.000 GiB-segundo al mes**; Neon da **0,5 GB** de base con copias. Con 100 talleres el
+catálogo no llega a 50 MB y el tráfico a unas 20.000 peticiones al mes: hay un margen de
+**cien veces** antes de que aparezca la primera factura. Y solo se cobra lo que se usa, así
+que una web sin visitas cuesta exactamente cero.
 
-Lo único que no se puede leer desde el panel: si los 312 $ son un **saldo que espera** o
-una **asignación mensual que caduca**. Si es lo segundo, los 24 meses empiezan a contar
-desde la aprobación del pack y no desde el primer despliegue. Se aclara mirando el saldo el
-mes que viene, o preguntando al soporte de Heroku.
+A partir del segundo año, el dominio son unos **12 €/año ≈ 1,00 €/mes**. Ese es hoy el
+coste fijo completo del proyecto.
+
+Los 90 días y los 300 $ que ofrece Google al abrir la cuenta son **la prueba gratuita**,
+no el tramo gratuito: lo que caduca es el crédito, no las capas gratuitas. Al terminar la
+prueba hay que pulsar «pasar a cuenta de pago» para que los servicios no se paren, y eso
+no genera ningún cargo mientras el consumo siga por debajo de esos límites. Lo que sí
+exige tarjeta es abrir la facturación, igual que la exigía Heroku.
+
+### el crédito de estudiante: intacto, y como red
+
+Los **312 $** del pack de estudiante (13 $/mes durante 24 meses) siguen **sin gastarse** y no
+están aplicados a ningún proveedor: no hay ninguna cuenta creada, así que no corre ningún
+reloj. El pack no se canjea hasta el día antes de la demostración en vivo.
+
+Sirve para lo que sirve un seguro: **si mañana Cloud Run cambia de condiciones**, el mismo
+código se despliega en Heroku con un `git push` y los 312 $ cubren **26 meses a 12 $/mes**
+(7 de servidor + 5 de base de datos). Esa es la alternativa evaluada y disponible, no un
+plan que haya que montar a mano.
+
+### cuándo deja de ser gratis
+
+| si algún día… | cuándo pasa | qué costaría |
+|---|---|---|
+| se supera el tramo de Cloud Run | > 2 M peticiones/mes: unas 100 veces este proyecto | unos céntimos por cada millón extra |
+| la base pasa de 0,5 GB | > 10.000 piezas con sus mensajes | Neon Launch: 19 $/mes |
+| se quiere quitar el arranque en frío | el primer día si molesta | 1 instancia mínima: ~5 $/mes |
+| se quiere pagar todo en un solo proveedor | cuando sobre tiempo, no antes | Heroku: 12 $/mes, con el crédito |
+
+Ninguna de las cuatro es una factura hoy, y las cuatro están dichas antes de que nadie
+pregunte. Eso es lo que se pide a un plan de costes: no que sea cero, sino que se sepa
+dónde está el primer euro.
 
 ## punto de equilibrio
 
 ```
-coste fijo mensual        12,10 €   (11,10 € de servidor + 1,00 € de dominio al año)
+coste fijo mensual hoy     1,00 €    (12 €/año de dominio, repartidos mes a mes)
+coste si algún día se paga 12,10 €   (11,10 € de infraestructura + 1,00 € de dominio)
 comisión por pedido        8 % del importe → 3,60 € con un pedido de 45 €
 plan premium               7,99 € al mes
 
-equilibrio solo con pedidos    12,10 ÷ 3,60 = 3,36  →  4 pedidos al mes
-equilibrio solo con premium    12,10 ÷ 7,99 = 1,52  →  2 suscriptores
+equilibrio hoy                 1,00 ÷ 3,60 = 0,28  →  1 pedido al mes
+equilibrio pagando todo       12,10 ÷ 3,60 = 3,36  →  4 pedidos al mes
+equilibrio pagando todo        12,10 ÷ 7,99 = 1,52  →  2 suscriptores
 ```
 
-**Cuatro pedidos al mes, o dos suscriptores, cubren toda la infraestructura.** Las dos
-vías no compiten: el premium cobra a quien quiere que lo vean, la comisión a quien
+**Un solo pedido al mes cubre el proyecto entero**, porque la infraestructura no cuesta
+nada: lo único que se paga hoy es el dominio del segundo año. Y con la fila de abajo queda
+dicho lo otro, que es lo que de verdad importa: **incluso pagando la infraestructura
+entera, cuatro pedidos al mes o dos suscriptores la cubren**. El plan no se sostiene por
+ser gratis; se sostiene porque el margen es enorme frente al coste.
+
+Las dos vías no compiten: el premium cobra a quien quiere que lo vean, la comisión a quien
 vende.
 
 ### sensibilidad de la comisión
 
-| pedido medio | ingreso por pedido | pedidos/mes para equilibrio |
+La tabla dice cuántos pedidos al mes harían falta **si algún día hubiera que pagar los
+12,10 €** de infraestructura y dominio. Es el escenario pesimista, y es el que se enseña.
+
+| pedido medio | ingreso por pedido | pedidos/mes para cubrir 12,10 € |
 |---|---|---|
 | 15 € | 1,20 € | 11 |
 | 25 € | 2,00 € | 7 |
@@ -111,11 +149,13 @@ comisión. Por eso hay un precio mínimo de pieza.
 
 | talleres | premium (5 %) | ingreso/mes | cubre |
 |---|---|---|---|
-| 20 | 1 | 7,99 € | el dominio y la mitad del servidor |
-| 50 | 2–3 | 16–24 € | toda la infraestructura |
-| 200 | 10 | 79,90 € | infraestructura y sobra para publicidad |
+| 20 | 1 | 7,99 € | el dominio del año, ocho veces |
+| 50 | 2–3 | 16–24 € | el dominio y, si hiciera falta, la infraestructura entera |
+| 200 | 10 | 79,90 € | todo, y sobra para publicidad |
 
 > Este proyecto no está pensado para ganar dinero, está pensado para demostrar que el
-> modelo funciona. Y funciona con muy poco: cuatro encargos al mes de 45 €, o dos
-> talleres con plan premium, ya pagan el servidor, el dominio y la base de datos. El
-> riesgo no es el margen, es conseguir esos cuatro encargos.
+> modelo funciona. Y funciona con muy poco: hoy la infraestructura cuesta 0 €, así que
+> **un solo encargo al mes de 45 € ya cubre lo único que se paga, el dominio**. Y en el
+> escenario pesimista —pagar servidor, base de datos y dominio— bastan cuatro encargos al
+> mes o dos talleres con plan premium. El riesgo no es el margen, es conseguir esos cuatro
+> encargos.

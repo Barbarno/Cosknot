@@ -18,11 +18,11 @@
         │ · marca desconocida, 0 usuarios│ · Etsy y AliExpress por precio │
         │ · catálogo de ejemplo, no real │ · Instagram como canal de compra│
         │ · sin valoraciones todavía     │ · la comisión del cobro se come│
-        │ · un solo servidor: si cae,    │   margen en pedidos pequeños   │
-        │   cae la web                   │ · propiedad intelectual de los │
+        │ · dependemos de Google y Neon: │   margen en pedidos pequeños   │
+        │   si caen, la web no responde  │ · propiedad intelectual de los │
         │ · el creador debe conectar     │   personajes (zona gris legal) │
-        │   una cuenta de cobro          │ · depender del crédito de      │
-        │ · sin app móvil                │   estudiante para el hosting   │
+        │   una cuenta de cobro          │ · depender de que Google y     │
+        │ · sin app móvil                │   Neon mantengan lo gratuito   │
         └────────────────────────────────┴────────────────────────────────┘
 ```
 
@@ -45,4 +45,4 @@ decisión de margen.
 | fortalezas | usarlas en el discurso: nicho, comisión y pedido ordenado |
 | oportunidades | entrar por comunidad y salón, no por publicidad |
 | debilidades | lanzamiento cerrado y fichas captadas a mano |
-| amenazas | precio mínimo de pieza y alternativa gratuita de hosting preparada |
+| amenazas | precio mínimo de pieza y hosting reversible: Heroku con crédito como plan B |
