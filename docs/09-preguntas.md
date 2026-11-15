@@ -128,9 +128,10 @@ Porque hay un servicio, no veinte. Añadiría capas que hay que mantener y expli
 resolver ningún problema de este proyecto.
 
 **¿Cuánto cuesta todo esto?**
-12 $/mes (7 de servidor + 5 de base de datos) y 0 € el primer año de dominio. Con el
-crédito de estudiante de 312 $ son 26 meses a cero. Stripe y Resend cobran por uso; con
-poco volumen, céntimos.
+12 $/mes (7 de servidor + 5 de base de datos) y 0 € el primer año de dominio. El crédito de
+estudiante de 312 $ está confirmado en la facturación y cubre 26 meses desde el primer
+despliegue; hoy no hay nada encendido, así que el gasto real es 0 €. Stripe y Resend cobran
+por uso; con poco volumen, céntimos.
 
 **¿Se puede cambiar de tecnología más adelante?**
 Sí, y se ha elegido sabiendo eso. Cambiar de hosting son horas; cambiar de base de datos

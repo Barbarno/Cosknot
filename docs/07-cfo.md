@@ -61,8 +61,16 @@ infraestructura arranca en capas gratuitas. El trabajo es del equipo.
 | integración continua | 0 € en repositorio público | plan gratuito |
 | **total** | **12 $/mes ≈ 11,10 €** | **0 € de caja durante 24 meses** |
 
-El crédito de estudiante son **312 $** (13 $/mes durante 24 meses): a 12 $/mes cubre
-**26 meses**. Después, el coste real es 12 $/mes más unos 12 €/año de dominio.
+El crédito de estudiante son **312 $** (13 $/mes durante 24 meses), y está **confirmado en
+el panel de facturación de Heroku**. A 12 $/mes cubre **26 meses** desde el día en que se
+encienden los dynos: hoy la aplicación existe con **0 dynos y 0 complementos**, así que el
+gasto real es 0 € y el crédito sigue entero. Después, el coste real es 12 $/mes más unos
+12 €/año de dominio.
+
+Lo único que no se puede leer desde el panel: si los 312 $ son un **saldo que espera** o
+una **asignación mensual que caduca**. Si es lo segundo, los 24 meses empiezan a contar
+desde la aprobación del pack y no desde el primer despliegue. Se aclara mirando el saldo el
+mes que viene, o preguntando al soporte de Heroku.
 
 ## punto de equilibrio
 

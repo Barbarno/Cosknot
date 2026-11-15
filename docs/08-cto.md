@@ -78,8 +78,9 @@ certificado del hosting fallaría la validación HTTP-01 y el contador de intent
 IP de Cloudflare en lugar de la del visitante.
 
 **Heroku y no Render.** Los dos valen. Heroku cuesta 12 $/mes (7 de servidor + 5 de base)
-y el pack de estudiante da 312 $ de crédito, o sea 26 meses a cero. Render es la
-alternativa gratuita el día que el crédito se acabe.
+y el pack de estudiante da 312 $ de crédito, ya confirmados en la facturación, o sea 26
+meses a cero desde el primer despliegue. Render es la alternativa gratuita el día que el
+crédito se acabe.
 
 ## modelo de datos previsto
 
@@ -150,5 +151,5 @@ explica por qué.
 | contador de intentos en memoria | se reinicia al reiniciar el proceso | aceptable con un solo worker |
 | 20 conexiones de PostgreSQL | el pool se queda en 3 + 2 | configuración por variable de entorno |
 | 512 MB de RAM | sin margen para procesos pesados | un worker; fotos fuera del servidor |
-| crédito temporal | en 2028 deja de cubrir los 12 $/mes | alternativa gratuita ya comparada (Render) |
+| crédito es un importe fijo | a 12 $/mes se agota en 26 meses desde el primer despliegue | alternativa gratuita ya comparada (Render); hoy el gasto real es 0 € |
 | dependencia de Stripe | sin cuenta de cobro no hay ingresos | la web funciona sin cobro; solo se apaga esa parte |
